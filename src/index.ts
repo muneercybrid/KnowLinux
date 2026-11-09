@@ -62,7 +62,7 @@ app.get('/api/categories/:slug', async (c) => {
   }
 })
 
-// --- Tools ---
+// --- Tools & Ingestion ---
 app.get('/api/tools/:slug', async (c) => {
   const slug = c.req.param('slug')
   try {
@@ -74,7 +74,6 @@ app.get('/api/tools/:slug', async (c) => {
   }
 })
 
-// --- Admin Ingestion ---
 app.post('/api/admin/ingest/:toolSlug', async (c) => {
   const toolSlug = c.req.param('toolSlug')
   try {

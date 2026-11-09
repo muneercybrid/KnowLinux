@@ -18,6 +18,8 @@ import FixPage from './pages/Fix';
 import FixDetail from './pages/FixDetail';
 import ComingSoon from './pages/ComingSoon';
 import ToolDetail from './pages/ToolDetail';
+import ToolDetail from './pages/ToolDetail';
+import ToolDetail from './pages/ToolDetail';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();

@@ -63,16 +63,16 @@ export default function CategoryDetail() {
               <h2 className="text-lg font-bold mb-4 border-b border-[var(--border-color)] pb-2">Tools in this Category</h2>
               <div className="space-y-3">
                 {data.tools.map((tool: any) => (
-                  <div key={tool.id} className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)]">
+                  <Link to={`/tools/${tool.slug}`} key={tool.id} className="block p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group">
                     <h3 className="font-bold text-brand">{tool.name}</h3>
                     <p className="text-sm text-[var(--text-muted)] mt-1">{tool.description}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
           )}
         </div>
-
+        
         {(!data.children || data.children.length === 0) && (!data.tools || data.tools.length === 0) && (
           <div className="p-12 text-center border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
             <Box className="w-12 h-12 text-[var(--text-faint)] mx-auto mb-4" />
