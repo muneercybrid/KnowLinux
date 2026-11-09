@@ -1,4 +1,4 @@
-import { Terminal, Menu, X, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { Terminal, Menu, X, Settings, LogOut, LayoutDashboard, Search } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ const navItems = [
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -25,16 +26,25 @@ export function Navbar() {
     navigate('/');
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--bg-surface)]/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        <Link to="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <Link to="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0">
           <Terminal className="w-6 h-6 text-brand" />
-          <span className="text-xl font-bold tracking-tight">KnowLinux</span>
+          <span className="text-xl font-bold tracking-tight hidden sm:block">KnowLinux</span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-5">
           {navItems.map((item) => (
             <Link key={item.name} to={item.path} className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors py-4 inline-block">
               {item.name}
@@ -42,32 +52,41 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-48 pl-9 pr-3 py-1.5 text-sm rounded-md border border-[var(--border-color)] bg-[var(--bg-main)] focus:outline-none focus:ring-2 focus:ring-brand transition-all focus:w-64"
+            />
+          </form>
+
           <ThemeToggle />
+          
           {user ? (
             <div className="relative">
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-brand/20 border border-brand/30 text-brand font-bold uppercase hover:bg-brand/30 transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-brand/20 border border-brand/30 text-brand font-bold uppercase hover:bg-brand/30 transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 {user.name?.charAt(0) || user.email.charAt(0)}
               </button>
 
-              {/* Profile Dropdown */}
               {isProfileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-xl py-2 z-50">
                   <div className="px-4 py-3 border-b border-[var(--border-color)] mb-2">
                     <p className="text-sm font-bold truncate">{user.name || 'User'}</p>
                     <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
                   </div>
-                  
                   <Link to="/workspace" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
                     <LayoutDashboard className="w-4 h-4" /> Workspace
                   </Link>
                   <Link to="/account" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
                     <Settings className="w-4 h-4" /> Account Settings
                   </Link>
-                  
                   <div className="border-t border-[var(--border-color)] mt-2 pt-2">
                     <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">
                       <LogOut className="w-4 h-4" /> Log out
@@ -84,7 +103,7 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="flex lg:hidden items-center gap-4">
+        <div className="flex lg:hidden items-center gap-3">
           <ThemeToggle />
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-[var(--text-muted)]">
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -95,6 +114,18 @@ export function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-4">
+          
+          <form onSubmit={handleSearch} className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
+            <input 
+              type="text" 
+              placeholder="Search software, commands..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] focus:outline-none focus:ring-2 focus:ring-brand text-sm"
+            />
+          </form>
+
           {navItems.map((item) => (
             <Link key={item.name} to={item.path} onClick={() => setIsMobileMenuOpen(false)} className="block font-semibold text-sm hover:text-brand">{item.name}</Link>
           ))}

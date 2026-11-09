@@ -10,28 +10,52 @@ import { fileURLToPath } from 'url'
 
 const app = new Hono()
 
-// Helper to get the current user from the session cookie
+// Helper to get the current user
 async function getCurrentUser(c: any) {
   const sessionId = getCookie(c, 'knowlinux_session')
   if (!sessionId) return null
   try {
     const session = await getDb().orm.public.Session.where({ id: sessionId }).include('user').first()
     if (!session) return null
-    
     const now = Temporal.Now.instant()
-    // Prisma 8 returns Temporal.Instant for timestamptz, so we don't need to parse a string.
-    // We can compare the Temporal objects directly.
     if (Temporal.Instant.compare(now, session.expiresAt) > 0) return null
-    
     return session.user
   } catch (e) {
-    console.error('Session check failed:', e)
     return null
   }
 }
 
 // --- Public API ---
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
+
+app.get('/api/search', async (c) => {
+  const query = c.req.query('q')
+  if (!query || query.trim().length < 2) return c.json({ software: [], commands: [], categories: [] })
+
+  try {
+    const db = getDb()
+    
+    // Search Software
+    const software = await db.orm.public.Software.where((s) => 
+      s.name.contains(query) || s.description.contains(query) || s.category.contains(query)
+    ).limit(10).all()
+
+    // Search Commands
+    const commands = await db.orm.public.Command.where((cmd) => 
+      cmd.name.contains(query) || cmd.description.contains(query) || cmd.category.contains(query)
+    ).limit(10).all()
+
+    // Search Categories
+    const categories = await db.orm.public.Category.where((cat) => 
+      cat.name.contains(query) || cat.description.contains(query)
+    ).limit(5).all()
+
+    return c.json({ software, commands, categories })
+  } catch (error) {
+    console.error('Search error:', error)
+    return c.json({ error: 'Search failed' }, 500)
+  }
+})
 
 app.get('/api/categories', async (c) => {
   const categories = await getDb().orm.public.Category.all()
@@ -87,7 +111,6 @@ app.post('/api/auth/register', async (c) => {
     
     const sessionId = crypto.randomUUID()
     const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
-    
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
     
     setCookie(c, 'knowlinux_session', sessionId, {
@@ -99,7 +122,6 @@ app.post('/api/auth/register', async (c) => {
     })
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (err: any) {
-    console.error('Register Error:', err)
     return c.json({ error: err.message || 'Registration failed' }, 500)
   }
 })
@@ -117,7 +139,6 @@ app.post('/api/auth/login', async (c) => {
     
     const sessionId = crypto.randomUUID()
     const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
-    
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
     
     setCookie(c, 'knowlinux_session', sessionId, {
@@ -129,7 +150,6 @@ app.post('/api/auth/login', async (c) => {
     })
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (err: any) {
-    console.error('Login Error:', err)
     return c.json({ error: err.message || 'Login failed' }, 500)
   }
 })
@@ -137,9 +157,7 @@ app.post('/api/auth/login', async (c) => {
 app.post('/api/auth/logout', async (c) => {
   const sessionId = getCookie(c, 'knowlinux_session')
   if (sessionId) {
-    try {
-      await getDb().orm.public.Session.where({ id: sessionId }).delete()
-    } catch (e) {}
+    try { await getDb().orm.public.Session.where({ id: sessionId }).delete() } catch (e) {}
     deleteCookie(c, 'knowlinux_session')
   }
   return c.json({ success: true })
@@ -155,7 +173,6 @@ app.get('/api/auth/me', async (c) => {
 app.get('/api/workspace/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  
   const saved = await getDb().orm.public.SavedCommand.where({ userId: user.id }).all()
   return c.json(saved)
 })
@@ -163,22 +180,15 @@ app.get('/api/workspace/commands', async (c) => {
 app.post('/api/workspace/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  
   const { command, description } = await c.req.json()
   if (!command || !description) return c.json({ error: 'Command and description required' }, 400)
-
-  const saved = await getDb().orm.public.SavedCommand.create({
-    userId: user.id,
-    command,
-    description
-  })
+  const saved = await getDb().orm.public.SavedCommand.create({ userId: user.id, command, description })
   return c.json(saved)
 })
 
 app.delete('/api/workspace/commands/:id', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  
   const id = parseInt(c.req.param('id'))
   await getDb().orm.public.SavedCommand.where({ id, userId: user.id }).delete()
   return c.json({ success: true })
