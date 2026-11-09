@@ -239,3 +239,23 @@ app.get('/api/fix/:slug', async (c) => {
   if (!fix) return c.json({ error: 'Fix not found' }, 404)
   return c.json(fix)
 })
+
+// --- Categories API ---
+app.get('/api/categories/az', async (c) => {
+  try {
+    const db = getDb()
+    const categories = await db.orm.public.Category.all()
+    
+    // Group by letter
+    const grouped = categories.reduce((acc: any, cat: any) => {
+      const letter = cat.letter.toUpperCase()
+      if (!acc[letter]) acc[letter] = []
+      acc[letter].push(cat)
+      return acc
+    }, {})
+    
+    return c.json(grouped)
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch categories' }, 500)
+  }
+})

@@ -46,13 +46,18 @@ model Post {
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  slug        String   @unique
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  slug        String     @unique
   description String
   icon        String
+  letter      String     // A-Z
+  keywords    String     @default("") // Comma-separated search terms
+  parentId    Int?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
   tools       Tool[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
   updatedAt   temporal.updatedAt()
   @@map("category")
 }
@@ -122,11 +127,11 @@ model TroubleshootingCase {
   id             Int      @id @default(autoincrement())
   title          String
   slug           String   @unique
-  errorSignature String   // Text to match against user input
+  errorSignature String
   explanation    String
-  causes         String   // JSON array of possible causes
-  diagnostics    String   // JSON array of safe diagnostic commands
-  fixes          String   // JSON array of repair commands
+  causes         String
+  diagnostics    String
+  fixes          String
   verification   String
   createdAt      DateTime @default(now())
   updatedAt      temporal.updatedAt()

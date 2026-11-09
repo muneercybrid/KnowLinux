@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link } from 'react-router-dom';
-import { Compass, ArrowRight, Terminal, Server, Box, Network, Code, Shield, Lock, AlertTriangle, Cpu, HardDrive, Database, Wrench, BookOpen } from 'lucide-react';
+import { Compass, Terminal, Server, Box, Network, Code, Shield, Lock, AlertTriangle, Cpu, HardDrive, Database, Wrench, BookOpen } from 'lucide-react';
 
 const iconMap: Record<string, any> = {
   Terminal, Server, Box, Network, Code, Shield, Lock, AlertTriangle, Cpu, HardDrive, Database, Wrench, BookOpen

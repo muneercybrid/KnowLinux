@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { ArrowLeft, Box, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Box } from 'lucide-react';
 
 export default function CategoryDetail() {
   const { slug } = useParams();
