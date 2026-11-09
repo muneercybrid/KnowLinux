@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Search from './pages/Search';
@@ -14,7 +15,7 @@ import Workspace from './pages/Workspace';
 import Account from './pages/Account';
 import ComingSoon from './pages/ComingSoon';
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
