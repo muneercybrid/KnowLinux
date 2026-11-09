@@ -62,7 +62,12 @@ app.get('/api/categories/:slug', async (c) => {
   }
 })
 
-// --- Tools & Ingestion ---
+// --- Tools ---
+app.get('/api/tools', async (c) => {
+  const tools = await getDb().orm.public.Tool.all()
+  return c.json(tools)
+})
+
 app.get('/api/tools/:slug', async (c) => {
   const slug = c.req.param('slug')
   try {
@@ -74,6 +79,7 @@ app.get('/api/tools/:slug', async (c) => {
   }
 })
 
+// --- Admin Ingestion ---
 app.post('/api/admin/ingest/:toolSlug', async (c) => {
   const toolSlug = c.req.param('toolSlug')
   try {
@@ -87,24 +93,9 @@ app.post('/api/admin/ingest/:toolSlug', async (c) => {
     let savedCount = 0
     for (const pkg of packages) {
       await db.orm.public.Package.upsert({
-        conflictOn: { 
-          toolId: tool.id, 
-          distro: pkg.distro, 
-          packageName: pkg.packageName 
-        },
-        update: { 
-          version: pkg.version, 
-          repo: pkg.repo, 
-          source: pkg.source 
-        },
-        create: {
-          toolId: tool.id,
-          distro: pkg.distro,
-          repo: pkg.repo,
-          packageName: pkg.packageName,
-          version: pkg.version,
-          source: pkg.source
-        }
+        conflictOn: { toolId: tool.id, distro: pkg.distro, packageName: pkg.packageName },
+        update: { version: pkg.version, repo: pkg.repo, source: pkg.source },
+        create: { toolId: tool.id, distro: pkg.distro, repo: pkg.repo, packageName: pkg.packageName, version: pkg.version, source: pkg.source }
       })
       savedCount++
     }
@@ -113,6 +104,32 @@ app.post('/api/admin/ingest/:toolSlug', async (c) => {
   } catch (error) {
     console.error('Ingestion error:', error)
     return c.json({ error: 'Ingestion failed' }, 500)
+  }
+})
+
+app.post('/api/admin/ingest-all', async (c) => {
+  try {
+    const db = getDb()
+    const tools = await db.orm.public.Tool.all()
+    let totalPackages = 0
+    
+    for (const tool of tools) {
+      console.log('Ingesting ' + tool.name + '...')
+      const packages = await fetchAllPackages(tool.name)
+      for (const pkg of packages) {
+        await db.orm.public.Package.upsert({
+          conflictOn: { toolId: tool.id, distro: pkg.distro, packageName: pkg.packageName },
+          update: { version: pkg.version, repo: pkg.repo, source: pkg.source },
+          create: { toolId: tool.id, distro: pkg.distro, repo: pkg.repo, packageName: pkg.packageName, version: pkg.version, source: pkg.source }
+        })
+        totalPackages++
+      }
+      await new Promise(r => setTimeout(r, 1000))
+    }
+    return c.json({ success: true, message: 'Ingested ' + totalPackages + ' packages across ' + tools.length + ' tools.' })
+  } catch (error) {
+    console.error('Bulk Ingestion error:', error)
+    return c.json({ error: 'Bulk ingestion failed' }, 500)
   }
 })
 

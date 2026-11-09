@@ -15,7 +15,8 @@ import Workspace from './pages/Workspace';
 import Account from './pages/Account';
 import FixPage from './pages/Fix';
 import FixDetail from './pages/FixDetail';
-import ToolDetail from './pages/ToolDetail';   // <-- Only once
+import ToolDetail from './pages/ToolDetail';
+import ToolsPage from './pages/Tools';
 import ComingSoon from './pages/ComingSoon';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -43,31 +44,23 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
-          
           <Route path="/explore" element={<Explore />} />
           <Route path="/explore/:slug" element={<Explore />} />
-          
           <Route path="/software" element={<SoftwarePage />} />
           <Route path="/software/:slug" element={<SoftwareDetail />} />
-          
           <Route path="/commands" element={<CommandsPage />} />
           <Route path="/commands/generate" element={<CommandGenerator />} />
           <Route path="/commands/:slug" element={<CommandDetail />} />
-
           <Route path="/fix" element={<FixPage />} />
           <Route path="/fix/:slug" element={<FixDetail />} />
-
+          <Route path="/tools" element={<ToolsPage />} />
           <Route path="/tools/:slug" element={<ToolDetail />} />
-
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
           <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-
           <Route path="/guides/*" element={<ComingSoon />} />
           <Route path="/security/*" element={<ComingSoon />} />
-
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
