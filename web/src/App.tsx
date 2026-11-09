@@ -16,6 +16,7 @@ import Account from './pages/Account';
 import FixPage from './pages/Fix';
 import FixDetail from './pages/FixDetail';
 import ToolDetail from './pages/ToolDetail';
+import LiveToolDetail from './pages/LiveToolDetail';
 import ToolsPage from './pages/Tools';
 import ComingSoon from './pages/ComingSoon';
 
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/fix" element={<FixPage />} />
           <Route path="/fix/:slug" element={<FixDetail />} />
           <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/tools/live/:name" element={<LiveToolDetail />} />
           <Route path="/tools/:slug" element={<ToolDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

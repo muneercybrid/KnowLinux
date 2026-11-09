@@ -11,6 +11,7 @@ export default function Search() {
   const [localResults, setLocalResults] = useState<any>({ software: [], commands: [], categories: [] });
   const [liveResults, setLiveResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDistro, setSelectedDistro] = useState<string>('all');
 
   useEffect(() => {
     if (!query) return;
@@ -26,7 +27,6 @@ export default function Search() {
     fetch(`/api/live-search?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
       .then(data => {
-        console.log("Live search data received:", data);
         setLiveResults(Array.isArray(data) ? data : []);
         setLoading(false);
       })
@@ -37,6 +37,14 @@ export default function Search() {
   }, [query]);
 
   const hasLocal = localResults.commands?.length > 0 || localResults.software?.length > 0;
+
+  // Extract unique distros for the filter
+  const availableDistros = ['all', ...Array.from(new Set(liveResults.map((r: any) => r.distro)))];
+  
+  // Filter the live results based on selection
+  const filteredLiveResults = selectedDistro === 'all' 
+    ? liveResults 
+    : liveResults.filter((r: any) => r.distro === selectedDistro);
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
@@ -81,23 +89,46 @@ export default function Search() {
 
             {/* Live Repology Results */}
             <div>
-              <h2 className="text-lg font-bold mb-4 border-b border-[var(--border-color)] pb-2 flex items-center gap-2">
-                <Globe className="w-5 h-5 text-brand" /> Live Linux Packages (Repology)
-              </h2>
-              {liveResults.length === 0 ? (
-                <div className="text-center py-8 text-[var(--text-muted)]">No live packages found. Try a different search term.</div>
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 border-b border-[var(--border-color)] pb-2 gap-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-brand" /> Live Linux Packages (Repology)
+                </h2>
+                
+                {/* Distro Filter */}
+                {liveResults.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+                    <span className="text-sm text-[var(--text-muted)] shrink-0">Filter:</span>
+                    {availableDistros.map((distro: any) => (
+                      <button
+                        key={distro}
+                        onClick={() => setSelectedDistro(distro)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors border ${
+                          selectedDistro === distro 
+                            ? 'bg-brand text-dark-bg border-brand' 
+                            : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-brand'
+                        }`}
+                      >
+                        {distro}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {filteredLiveResults.length === 0 ? (
+                <div className="text-center py-8 text-[var(--text-muted)]">No live packages found for this filter.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {liveResults.map((pkg: any, i: number) => (
-                    <div key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+                  {filteredLiveResults.map((pkg: any, i: number) => (
+                    <Link to={`/tools/live/${pkg.name}?repo=${pkg.repo}`} key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group block">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-brand truncate">{pkg.name}</h3>
+                        <h3 className="font-bold text-brand truncate group-hover:underline">{pkg.name}</h3>
                         <span className="text-xs font-mono bg-[var(--bg-elevated)] px-2 py-1 rounded capitalize shrink-0 ml-2">{pkg.distro}</span>
                       </div>
                       <div className="font-mono text-sm bg-[#0d1117] p-2 rounded text-emerald-400 truncate">
                         {pkg.repo}/{pkg.name} (v{pkg.version})
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
