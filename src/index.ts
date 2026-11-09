@@ -2,6 +2,8 @@ import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { getDb } from './prisma/db.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 const app = new Hono()
 
@@ -15,12 +17,15 @@ app.get('/api/users', async (c) => {
   return c.json(users)
 })
 
-// Serve static files. Because the deployment runs from inside 'dist',
-// the 'public' folder is located right next to index.js.
-app.use('/*', serveStatic({ root: './public' }))
+// Calculate absolute path to the public directory
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const publicDir = path.join(__dirname, 'public')
+
+// Serve static files
+app.use('/*', serveStatic({ root: publicDir }))
 
 // Fallback to index.html for SPA routing
-app.get('*', serveStatic({ path: './public/index.html' }))
+app.get('*', serveStatic({ path: path.join(publicDir, 'index.html') }))
 
 const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
