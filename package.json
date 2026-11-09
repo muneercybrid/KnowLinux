@@ -1,0 +1,36 @@
+{
+  "name": "prisma-compute-hono",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "bun run contract:emit && tsc",
+    "start": "node dist/index.js",
+    "contract:emit": "prisma contract emit",
+    "migration:plan": "prisma migration plan",
+    "db:init": "prisma db init",
+    "db:update": "prisma db update",
+    "db:seed": "tsx src/prisma/seed.ts",
+    "compute:login": "prisma auth login",
+    "compute:database:create": "prisma postgres create prisma-compute-hono --branch main",
+    "compute:connect": "prisma git connect",
+    "compute:open": "prisma service open"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.0.4",
+    "@prisma/composer": "0.29.1",
+    "@prisma/composer-prisma-cloud": "0.29.1",
+    "@prisma/orm-postgres": "8.0.0-rc.17",
+    "dotenv": "17.4.2",
+    "hono": "4.12.34",
+    "temporal-polyfill": "1.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "alchemy": "2.0.0-beta.78",
+    "prisma": "8.0.0-rc.22",
+    "tsx": "4.22.4",
+    "typescript": "5.9.3"
+  }
+}
