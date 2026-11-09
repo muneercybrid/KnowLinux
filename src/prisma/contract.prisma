@@ -89,7 +89,6 @@ model SoftwareDistribution {
   installCommand String
   software       Software     @relation(fields: [softwareId], references: [id], onDelete: Cascade)
   distribution   Distribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
-  
   @@id([softwareId, distributionId])
   @@map("software_distribution")
 }
