@@ -13,12 +13,24 @@ interface Software {
 
 export default function SoftwarePage() {
   const [software, setSoftware] = useState<Software[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/software')
-      .then(res => res.json())
-      .then(data => setSoftware(data))
-      .catch(err => console.error(err));
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(data => {
+        setSoftware(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError("Failed to load software. The database might be empty or the connection failed.");
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -47,8 +59,12 @@ export default function SoftwarePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {software.length === 0 ? (
+          {loading ? (
             <div className="col-span-full text-center py-12 text-[var(--text-muted)]">Loading software...</div>
+          ) : error ? (
+            <div className="col-span-full text-center py-12 text-red-500">{error}</div>
+          ) : software.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-[var(--text-muted)]">No software found. The database is currently empty.</div>
           ) : (
             software.map((app) => (
               <div key={app.id} className="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors cursor-pointer group">

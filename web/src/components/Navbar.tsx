@@ -1,15 +1,16 @@
 import { Terminal, Search, Menu, X } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const navItems = [
-  { name: 'Explore', dropdown: ['Linux Fundamentals', 'Distributions', 'Desktop Linux', 'Networking'] },
-  { name: 'Tools', dropdown: ['System Utilities', 'Networking Tools', 'Security Tools', 'Monitoring'] },
-  { name: 'Commands', dropdown: ['Command Explorer', 'Command Generator', 'Shell Scripting'] },
-  { name: 'Software', dropdown: ['Software Discovery', 'Install Software', 'Package Managers'] },
-  { name: 'Guides', dropdown: ['Beginner', 'Intermediate', 'Advanced', 'Tutorials'] },
-  { name: 'Fix', dropdown: ['Diagnose an Error', 'Package Installation', 'Boot Problems'] },
-  { name: 'Security', dropdown: ['Linux Hardening', 'Penetration Testing', 'Incident Response'] },
+  { name: 'Explore', path: '/explore', dropdown: ['Linux Fundamentals', 'Distributions', 'Desktop Linux', 'Networking'] },
+  { name: 'Tools', path: '/tools', dropdown: ['System Utilities', 'Networking Tools', 'Security Tools', 'Monitoring'] },
+  { name: 'Commands', path: '/commands', dropdown: ['Command Explorer', 'Command Generator', 'Shell Scripting'] },
+  { name: 'Software', path: '/software', dropdown: ['Software Discovery', 'Install Software', 'Package Managers'] },
+  { name: 'Guides', path: '/guides', dropdown: ['Beginner', 'Intermediate', 'Advanced', 'Tutorials'] },
+  { name: 'Fix', path: '/fix', dropdown: ['Diagnose an Error', 'Package Installation', 'Boot Problems'] },
+  { name: 'Security', path: '/security', dropdown: ['Linux Hardening', 'Penetration Testing', 'Incident Response'] },
 ];
 
 export function Navbar() {
@@ -20,24 +21,24 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Logo */}
-        <div className="flex items-center gap-2 cursor-pointer">
+        <Link to="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
           <Terminal className="w-6 h-6 text-brand" />
           <span className="text-xl font-bold tracking-tight">KnowLinux</span>
-        </div>
+        </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden lg:flex items-center gap-6">
           {navItems.map((item) => (
             <div key={item.name} className="relative group">
-              <button className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors py-4">
+              <Link to={item.path} className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors py-4 inline-block">
                 {item.name}
-              </button>
+              </Link>
               {/* Dropdown */}
               <div className="absolute top-full left-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-xl py-2 z-50">
                 {item.dropdown.map((sub) => (
-                  <a key={sub} href="#" className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-brand">
+                  <Link key={sub} to={`${item.path}/${sub.toLowerCase().replace(/ /g, '-')}`} className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-brand">
                     {sub}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -52,8 +53,8 @@ export function Navbar() {
             <kbd className="ml-4 text-xs font-mono bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">Ctrl K</kbd>
           </button>
           <ThemeToggle />
-          <a href="#" className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors">Log in</a>
-          <a href="#" className="text-sm font-medium bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-md transition-colors font-semibold">Sign up</a>
+          <Link to="/login" className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors">Log in</Link>
+          <Link to="/register" className="text-sm font-medium bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-md transition-colors font-semibold">Sign up</Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -70,10 +71,10 @@ export function Navbar() {
         <div className="lg:hidden border-t border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-4">
           {navItems.map((item) => (
             <div key={item.name}>
-              <div className="font-semibold text-sm mb-1">{item.name}</div>
+              <Link to={item.path} className="font-semibold text-sm mb-1 block hover:text-brand">{item.name}</Link>
               <div className="grid grid-cols-2 gap-2">
                 {item.dropdown.map(sub => (
-                  <a key={sub} href="#" className="text-sm text-[var(--text-muted)] hover:text-brand">{sub}</a>
+                  <Link key={sub} to={`${item.path}/${sub.toLowerCase().replace(/ /g, '-')}`} className="text-sm text-[var(--text-muted)] hover:text-brand">{sub}</Link>
                 ))}
               </div>
             </div>
