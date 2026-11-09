@@ -3,6 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import bcrypt from 'bcryptjs'
+import { Temporal } from 'temporal-polyfill'
 import { getDb } from './prisma/db.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -66,7 +67,9 @@ app.post('/api/auth/register', async (c) => {
     const user = await db.orm.public.User.create({ email, name, passwordHash })
 
     const sessionId = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    // Prisma 8 requires Temporal.Instant, not JS Date
+    const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
+    
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
 
     setCookie(c, 'knowlinux_session', sessionId, {
@@ -80,7 +83,6 @@ app.post('/api/auth/register', async (c) => {
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (err: any) {
     console.error('Register Error:', err)
-    // Temporarily expose the error for debugging
     return c.json({ error: err.message || 'Registration failed' }, 500)
   }
 })
@@ -98,7 +100,8 @@ app.post('/api/auth/login', async (c) => {
     if (!valid) return c.json({ error: 'Invalid credentials' }, 401)
 
     const sessionId = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
+    
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
 
     setCookie(c, 'knowlinux_session', sessionId, {
@@ -133,10 +136,20 @@ app.get('/api/auth/me', async (c) => {
 
   try {
     const session = await getDb().orm.public.Session.where({ id: sessionId }).include('user').first()
-    if (!session || new Date(session.expiresAt) < new Date()) {
+    if (!session) {
       deleteCookie(c, 'knowlinux_session')
       return c.json({ user: null })
     }
+    
+    // Compare Temporal.Instant
+    const now = Temporal.Now.instant()
+    const sessionExpiry = Temporal.Instant.from(session.expiresAt.toString())
+    
+    if (Temporal.Instant.compare(now, sessionExpiry) > 0) {
+      deleteCookie(c, 'knowlinux_session')
+      return c.json({ user: null })
+    }
+    
     return c.json({ user: { id: session.user.id, email: session.user.email, name: session.user.name } })
   } catch (err) {
     return c.json({ user: null })
