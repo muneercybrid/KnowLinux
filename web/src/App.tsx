@@ -4,6 +4,8 @@ import Search from './pages/Search';
 import Explore from './pages/Explore';
 import SoftwarePage from './pages/Software';
 import SoftwareDetail from './pages/SoftwareDetail';
+import CommandsPage from './pages/Commands';
+import CommandDetail from './pages/CommandDetail';
 import ComingSoon from './pages/ComingSoon';
 
 function NotFound() {
@@ -23,24 +25,22 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         
-        {/* Dynamic Category Explore */}
         <Route path="/explore" element={<ComingSoon />} />
         <Route path="/explore/:slug" element={<Explore />} />
         
-        {/* Software Centre */}
         <Route path="/software" element={<SoftwarePage />} />
         <Route path="/software/:slug" element={<SoftwareDetail />} />
         
-        {/* Other Core Modules */}
+        <Route path="/commands" element={<CommandsPage />} />
+        <Route path="/commands/:slug" element={<CommandDetail />} />
+
         <Route path="/tools/*" element={<ComingSoon />} />
-        <Route path="/commands/*" element={<ComingSoon />} />
         <Route path="/guides/*" element={<ComingSoon />} />
         <Route path="/fix/*" element={<ComingSoon />} />
         <Route path="/security/*" element={<ComingSoon />} />
         <Route path="/login" element={<ComingSoon />} />
         <Route path="/register" element={<ComingSoon />} />
 
-        {/* True 404 Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

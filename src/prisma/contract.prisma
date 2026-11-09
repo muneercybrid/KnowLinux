@@ -82,3 +82,16 @@ model SoftwareDistribution {
   @@id([softwareId, distributionId])
   @@map("software_distribution")
 }
+
+model Command {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String
+  syntax      String
+  category    String
+  examples    String   // JSON stringified array of examples
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+  @@map("command")
+}

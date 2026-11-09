@@ -82,6 +82,22 @@ async function main() {
     }
   }
 
+  const commandsData = [
+    { name: 'ls', slug: 'ls', description: 'List directory contents.', syntax: 'ls [OPTION]... [FILE]...', category: 'Filesystem', examples: JSON.stringify([{ desc: 'List all files including hidden', cmd: 'ls -la' }, { desc: 'List files sorted by size', cmd: 'ls -lhS' }]) },
+    { name: 'grep', slug: 'grep', description: 'Search for patterns in files or standard input.', syntax: 'grep [OPTION]... PATTERNS [FILE]...', category: 'Text Processing', examples: JSON.stringify([{ desc: 'Search for a word in a file', cmd: 'grep "error" /var/log/syslog' }, { desc: 'Case-insensitive search', cmd: 'grep -i "warning" app.log' }]) },
+    { name: 'chmod', slug: 'chmod', description: 'Change file mode bits (permissions).', syntax: 'chmod [OPTION]... MODE[,MODE]... FILE...', category: 'Permissions', examples: JSON.stringify([{ desc: 'Give execute permission to user', cmd: 'chmod +x script.sh' }, { desc: 'Set specific permissions (read/write for owner, read for others)', cmd: 'chmod 644 document.txt' }]) },
+    { name: 'systemctl', slug: 'systemctl', description: 'Control the systemd system and service manager.', syntax: 'systemctl [OPTIONS...] COMMAND [UNIT...]', category: 'System Administration', examples: JSON.stringify([{ desc: 'Start a service', cmd: 'sudo systemctl start nginx' }, { desc: 'Check service status', cmd: 'systemctl status ssh' }]) },
+    { name: 'nmap', slug: 'nmap', description: 'Network exploration tool and security / port scanner.', syntax: 'nmap [Scan Type...] [Options] {target specification}', category: 'Networking', examples: JSON.stringify([{ desc: 'Scan for open ports on a target', cmd: 'nmap -sV 192.168.1.1' }, { desc: 'Ping scan to discover hosts', cmd: 'nmap -sn 192.168.1.0/24' }]) },
+  ]
+
+  for (const cmd of commandsData) {
+    await db.orm.public.Command.upsert({
+      conflictOn: { slug: cmd.slug },
+      update: {},
+      create: cmd,
+    })
+  }
+
   console.log('Seeding complete.')
 }
 
