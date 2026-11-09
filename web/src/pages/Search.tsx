@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Search as SearchIcon, ArrowLeft, Terminal, Folder, ArrowRight, Globe } from 'lucide-react';
+import { Search as SearchIcon, ArrowLeft, Folder, ArrowRight, Globe } from 'lucide-react';
 
 export default function Search() {
   const [searchParams] = useSearchParams();
