@@ -8,13 +8,14 @@ async function main() {
   const categoriesData = [
     { name: 'Networking', slug: 'networking', letter: 'N', description: 'Network configuration, DNS, and diagnostics.', icon: 'Network', keywords: 'network' },
     { name: 'Security', slug: 'security', letter: 'S', description: 'Firewalls, encryption, and hardening.', icon: 'Shield', keywords: 'security' },
-    { name: 'System Administration', slug: 'sysadmin', letter: 'S', description: 'System management, monitoring, and utilities.', icon: 'Server', keywords: 'sysadmin' },
+    { name: 'System Administration', slug: 'system-administration', letter: 'S', description: 'System management, monitoring, and utilities.', icon: 'Server', keywords: 'sysadmin' },
     { name: 'Development', slug: 'development', letter: 'D', description: 'Compilers, code editors, and version control.', icon: 'Code', keywords: 'dev, code' },
+    
     { name: 'Network Scanners', slug: 'network-scanners', letter: 'N', description: 'Tools for discovering hosts and open ports.', icon: 'Network', parentSlug: 'networking' },
     { name: 'Packet Analyzers', slug: 'packet-analyzers', letter: 'P', description: 'Tools for capturing network traffic.', icon: 'Network', parentSlug: 'networking' },
     { name: 'Web Scanners', slug: 'web-scanners', letter: 'W', description: 'Web application security scanners.', icon: 'Shield', parentSlug: 'security' },
     { name: 'Forensics', slug: 'forensics', letter: 'F', description: 'Digital evidence acquisition.', icon: 'Lock', parentSlug: 'security' },
-    { name: 'Monitoring', slug: 'monitoring', letter: 'M', description: 'System resource and performance monitoring.', icon: 'Server', parentSlug: 'sysadmin' },
+    { name: 'Monitoring', slug: 'monitoring', letter: 'M', description: 'System resource and performance monitoring.', icon: 'Server', parentSlug: 'system-administration' },
     { name: 'Text Editors', slug: 'text-editors', letter: 'T', description: 'Command-line and GUI text editors.', icon: 'Code', parentSlug: 'development' },
     { name: 'Version Control', slug: 'version-control', letter: 'V', description: 'Git and other version control systems.', icon: 'Code', parentSlug: 'development' },
   ]
@@ -30,7 +31,9 @@ async function main() {
   for (const cat of categoriesData) {
     if (cat.parentSlug) {
       const parent = await db.orm.public.Category.where({ slug: cat.parentSlug }).first()
-      if (parent) await db.orm.public.Category.where({ slug: cat.slug }).update({ parentId: parent.id })
+      if (parent) {
+        await db.orm.public.Category.where({ slug: cat.slug }).update({ parentId: parent.id })
+      }
     }
   }
 
@@ -47,11 +50,11 @@ async function main() {
     { name: 'Hashcat', slug: 'hashcat', description: 'Advanced password recovery utility.', categorySlug: 'security' },
     { name: 'htop', slug: 'htop', description: 'Interactive process viewer.', categorySlug: 'monitoring' },
     { name: 'btop', slug: 'btop', description: 'Resource monitor with a modern UI.', categorySlug: 'monitoring' },
-    { name: 'systemctl', slug: 'systemctl', description: 'Control the systemd system and service manager.', categorySlug: 'sysadmin' },
-    { name: 'cron', slug: 'cron', description: 'Daemon to execute scheduled commands.', categorySlug: 'sysadmin' },
-    { name: 'rsync', slug: 'rsync', description: 'Fast, versatile file copying tool.', categorySlug: 'sysadmin' },
-    { name: 'Docker', slug: 'docker', description: 'Containerization platform.', categorySlug: 'sysadmin' },
-    { name: 'Podman', slug: 'podman', description: 'Daemonless container engine.', categorySlug: 'sysadmin' },
+    { name: 'systemctl', slug: 'systemctl', description: 'Control the systemd system and service manager.', categorySlug: 'system-administration' },
+    { name: 'cron', slug: 'cron', description: 'Daemon to execute scheduled commands.', categorySlug: 'system-administration' },
+    { name: 'rsync', slug: 'rsync', description: 'Fast, versatile file copying tool.', categorySlug: 'system-administration' },
+    { name: 'Docker', slug: 'docker', description: 'Containerization platform.', categorySlug: 'system-administration' },
+    { name: 'Podman', slug: 'podman', description: 'Daemonless container engine.', categorySlug: 'system-administration' },
     { name: 'Git', slug: 'git', description: 'Distributed version control system.', categorySlug: 'version-control' },
     { name: 'Vim', slug: 'vim', description: 'Highly configurable text editor.', categorySlug: 'text-editors' },
     { name: 'Neovim', slug: 'neovim', description: 'Vim-fork focused on extensibility and usability.', categorySlug: 'text-editors' },
