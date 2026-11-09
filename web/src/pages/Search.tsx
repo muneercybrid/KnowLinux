@@ -2,36 +2,37 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Search as SearchIcon, ArrowLeft, Box, Terminal, Folder, ArrowRight } from 'lucide-react';
-
-interface SearchResults {
-  software: any[];
-  commands: any[];
-  categories: any[];
-}
+import { Search as SearchIcon, ArrowLeft, Terminal, Folder, ArrowRight, Globe } from 'lucide-react';
 
 export default function Search() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
-  const [results, setResults] = useState<SearchResults | null>(null);
+  
+  const [localResults, setLocalResults] = useState<any>({ software: [], commands: [], categories: [] });
+  const [liveResults, setLiveResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!query) return;
     setLoading(true);
+
+    // 1. Fetch local database results
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
+      .then(data => setLocalResults(data))
+      .catch(console.error);
+
+    // 2. Fetch live Repology results
+    fetch(`/api/live-search?q=${encodeURIComponent(query)}`)
+      .then(res => res.json())
       .then(data => {
-        setResults(data);
+        setLiveResults(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, [query]);
 
-  const hasResults = results && (results.software.length > 0 || results.commands.length > 0 || results.categories.length > 0);
+  const hasLocal = localResults.commands?.length > 0 || localResults.software?.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
@@ -51,43 +52,17 @@ export default function Search() {
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-[var(--text-muted)]">Searching the KnowLinux database...</div>
-        ) : !hasResults ? (
-          <div className="text-center py-20 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl">
-            <SearchIcon className="w-12 h-12 text-[var(--text-faint)] mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">No results found</h2>
-            <p className="text-[var(--text-muted)]">Try searching for a different tool, command, or category.</p>
-          </div>
+          <div className="text-center py-20 text-[var(--text-muted)]">Searching the Linux ecosystem...</div>
         ) : (
           <div className="space-y-10">
-            {/* Software Results */}
-            {results.software.length > 0 && (
+            {/* Local Results */}
+            {hasLocal && (
               <div>
-                <h2 className="text-lg font-bold mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-2">
-                  <Box className="w-5 h-5 text-brand" /> Software
+                <h2 className="text-lg font-bold mb-4 border-b border-[var(--border-color)] pb-2 flex items-center gap-2">
+                  <Folder className="w-5 h-5 text-brand" /> KnowLinux Database
                 </h2>
                 <div className="grid gap-4">
-                  {results.software.map((app) => (
-                    <Link to={`/software/${app.slug}`} key={app.id} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors flex items-center justify-between group">
-                      <div>
-                        <h3 className="font-bold group-hover:text-brand transition-colors">{app.name}</h3>
-                        <p className="text-sm text-[var(--text-muted)] line-clamp-1">{app.description}</p>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-[var(--text-faint)] group-hover:text-brand transition-colors" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Command Results */}
-            {results.commands.length > 0 && (
-              <div>
-                <h2 className="text-lg font-bold mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-2">
-                  <Terminal className="w-5 h-5 text-brand" /> Commands
-                </h2>
-                <div className="grid gap-4">
-                  {results.commands.map((cmd) => (
+                  {localResults.commands.map((cmd: any) => (
                     <Link to={`/commands/${cmd.slug}`} key={cmd.id} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors flex items-center justify-between group">
                       <div>
                         <h3 className="font-mono font-bold group-hover:text-brand transition-colors">{cmd.name}</h3>
@@ -100,25 +75,29 @@ export default function Search() {
               </div>
             )}
 
-            {/* Category Results */}
-            {results.categories.length > 0 && (
-              <div>
-                <h2 className="text-lg font-bold mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-2">
-                  <Folder className="w-5 h-5 text-brand" /> Categories
-                </h2>
-                <div className="grid gap-4">
-                  {results.categories.map((cat) => (
-                    <Link to={`/explore/${cat.slug}`} key={cat.id} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors flex items-center justify-between group">
-                      <div>
-                        <h3 className="font-bold group-hover:text-brand transition-colors">{cat.name}</h3>
-                        <p className="text-sm text-[var(--text-muted)] line-clamp-1">{cat.description}</p>
+            {/* Live Repology Results */}
+            <div>
+              <h2 className="text-lg font-bold mb-4 border-b border-[var(--border-color)] pb-2 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-brand" /> Live Linux Packages (Repology)
+              </h2>
+              {liveResults.length === 0 ? (
+                <div className="text-center py-8 text-[var(--text-muted)]">No live packages found. Try a different search term.</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {liveResults.map((pkg: any, i: number) => (
+                    <div key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-brand truncate">{pkg.name}</h3>
+                        <span className="text-xs font-mono bg-[var(--bg-elevated)] px-2 py-1 rounded capitalize shrink-0 ml-2">{pkg.distro}</span>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-[var(--text-faint)] group-hover:text-brand transition-colors" />
-                    </Link>
+                      <div className="font-mono text-sm bg-[#0d1117] p-2 rounded text-emerald-400 truncate">
+                        {pkg.repo}/{pkg.name} (v{pkg.version})
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </main>
