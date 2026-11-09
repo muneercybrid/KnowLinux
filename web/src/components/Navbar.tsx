@@ -54,7 +54,7 @@ export function Navbar() {
 
         <div className="hidden lg:flex items-center gap-3">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
+            <button type="submit" className="absolute left-2.5 top-1/2 -translate-y-1/2"><Search className="w-4 h-4 text-[var(--text-faint)] hover:text-brand transition-colors" /></button>
             <input 
               type="text" 
               placeholder="Search..." 

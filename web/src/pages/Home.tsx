@@ -55,7 +55,7 @@ export default function Home() {
             </p>
             
             <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-faint)] group-focus-within:text-brand transition-colors" />
+              <button type="submit" className="absolute left-4 top-1/2 -translate-y-1/2"><Search className="w-5 h-5 text-[var(--text-faint)] group-focus-within:text-brand transition-colors" /></button>
               <input 
                 type="text" 
                 value={searchQuery}

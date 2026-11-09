@@ -20,16 +20,20 @@ export default function Search() {
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
       .then(data => setLocalResults(data))
-      .catch(console.error);
+      .catch(err => console.error("Local search failed", err));
 
     // 2. Fetch live Repology results
     fetch(`/api/live-search?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
       .then(data => {
+        console.log("Live search data received:", data);
         setLiveResults(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        console.error("Live search failed", err);
+        setLoading(false);
+      });
   }, [query]);
 
   const hasLocal = localResults.commands?.length > 0 || localResults.software?.length > 0;
@@ -37,7 +41,7 @@ export default function Search() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navbar />
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-12">
+      <main className="flex-grow max-w-5xl mx-auto w-full px-4 py-12">
         <Link to="/" className="inline-flex items-center text-sm text-[var(--text-muted)] hover:text-brand mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
         </Link>
@@ -83,7 +87,7 @@ export default function Search() {
               {liveResults.length === 0 ? (
                 <div className="text-center py-8 text-[var(--text-muted)]">No live packages found. Try a different search term.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {liveResults.map((pkg: any, i: number) => (
                     <div key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
                       <div className="flex justify-between items-start mb-2">
