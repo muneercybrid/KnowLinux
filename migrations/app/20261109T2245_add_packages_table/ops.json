@@ -1,0 +1,164 @@
+[
+  {
+    "id": "table.package",
+    "label": "Create table \"package\"",
+    "summary": "Creates table \"package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"package\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"package\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"package\"",
+        "sql": "CREATE TABLE \"public\".\"package\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"distro\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"packageName\" text NOT NULL,\n  \"repo\" text NOT NULL,\n  \"source\" text NOT NULL,\n  \"toolId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"version\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"package\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"package\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.package.package_toolId_distro_packageName_key",
+    "label": "Add unique constraint on \"package\" (toolId, distro, packageName)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "package_toolId_distro_packageName_key",
+        "table": "package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"package_toolId_distro_packageName_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "package_toolId_distro_packageName_key",
+          "public",
+          "\"public\".\"package\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"package_toolId_distro_packageName_key\"",
+        "sql": "ALTER TABLE \"public\".\"package\" ADD CONSTRAINT \"package_toolId_distro_packageName_key\" UNIQUE (\"toolId\", \"distro\", \"packageName\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"package_toolId_distro_packageName_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "package_toolId_distro_packageName_key",
+          "public",
+          "\"public\".\"package\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.package.package_toolId_idx_f1fb6638",
+    "label": "Create index \"package_toolId_idx_f1fb6638\" on \"package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "package_toolId_idx_f1fb6638",
+        "table": "package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"package_toolId_idx_f1fb6638\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"package_toolId_idx_f1fb6638\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"package_toolId_idx_f1fb6638\"",
+        "sql": "CREATE INDEX \"package_toolId_idx_f1fb6638\" ON \"public\".\"package\" (\"toolId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"package_toolId_idx_f1fb6638\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"package_toolId_idx_f1fb6638\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.package.package_toolId_fkey",
+    "label": "Add foreign key \"package_toolId_fkey\" on \"package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "package_toolId_fkey",
+        "table": "package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"package_toolId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "package_toolId_fkey",
+          "public",
+          "\"public\".\"package\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"package_toolId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"package\"\nADD CONSTRAINT \"package_toolId_fkey\"\nFOREIGN KEY (\"toolId\")\nREFERENCES \"public\".\"tool\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"package_toolId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "package_toolId_fkey",
+          "public",
+          "\"public\".\"package\""
+        ]
+      }
+    ]
+  }
+]

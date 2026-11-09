@@ -5,26 +5,27 @@ const db = getDb()
 async function main() {
   console.log('Seeding database...')
 
-  // 1. Seed Top-Level & Sub-Categories
   const categoriesData = [
-    // Top Level
     { name: 'Networking', slug: 'networking', letter: 'N', description: 'Network configuration, DNS, and diagnostics.', icon: 'Network', keywords: 'network, ping, dns' },
     { name: 'Security', slug: 'security', letter: 'S', description: 'Firewalls, encryption, and hardening.', icon: 'Shield', keywords: 'firewall, encrypt' },
-    
-    // Sub-categories for Networking
     { name: 'Network Scanners', slug: 'network-scanners', letter: 'N', description: 'Tools for discovering hosts and open ports.', icon: 'Network', parentSlug: 'networking' },
     { name: 'Packet Analyzers', slug: 'packet-analyzers', letter: 'P', description: 'Tools for capturing and inspecting network traffic.', icon: 'Network', parentSlug: 'networking' },
-
-    // Sub-categories for Security
     { name: 'Web Scanners', slug: 'web-scanners', letter: 'W', description: 'Tools for assessing web application security.', icon: 'Shield', parentSlug: 'security' },
     { name: 'Forensics', slug: 'forensics', letter: 'F', description: 'Tools for digital evidence acquisition.', icon: 'Lock', parentSlug: 'security' },
   ]
 
-  // First pass: Create all categories without parents
+  // 1. Create/Update Categories
   for (const cat of categoriesData) {
     await db.orm.public.Category.upsert({
       conflictOn: { slug: cat.slug },
-      update: {},
+      // FIX: Actually update the fields if the category already exists
+      update: { 
+        name: cat.name,
+        letter: cat.letter,
+        description: cat.description,
+        icon: cat.icon,
+        keywords: cat.keywords || ''
+      },
       create: {
         name: cat.name,
         slug: cat.slug,
@@ -36,7 +37,7 @@ async function main() {
     })
   }
 
-  // Second pass: Link parents using chainable .where().update()
+  // 2. Link Parents
   for (const cat of categoriesData) {
     if (cat.parentSlug) {
       const parent = await db.orm.public.Category.where({ slug: cat.parentSlug }).first()
@@ -48,7 +49,7 @@ async function main() {
     }
   }
 
-  // 2. Seed Tools and link to Sub-Categories
+  // 3. Seed Tools
   const toolsData = [
     { name: 'Nmap', slug: 'nmap-tool', description: 'Network exploration tool and security / port scanner.', categorySlug: 'network-scanners' },
     { name: 'Wireshark', slug: 'wireshark', description: 'Network protocol analyzer.', categorySlug: 'packet-analyzers' },
@@ -61,7 +62,7 @@ async function main() {
     if (cat) {
       await db.orm.public.Tool.upsert({
         conflictOn: { slug: tool.slug },
-        update: {},
+        update: { name: tool.name, description: tool.description, categoryId: cat.id },
         create: {
           name: tool.name,
           slug: tool.slug,

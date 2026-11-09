@@ -5,6 +5,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import bcrypt from 'bcryptjs'
 import { Temporal } from 'temporal-polyfill'
 import { getDb } from './prisma/db.js'
+import { fetchAllPackages } from './services/connectors.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -58,6 +59,61 @@ app.get('/api/categories/:slug', async (c) => {
     return c.json(category)
   } catch (error) {
     return c.json({ error: 'Failed to fetch category' }, 500)
+  }
+})
+
+// --- Tools ---
+app.get('/api/tools/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  try {
+    const tool = await getDb().orm.public.Tool.where({ slug }).include('packages').first()
+    if (!tool) return c.json({ error: 'Tool not found' }, 404)
+    return c.json(tool)
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch tool' }, 500)
+  }
+})
+
+// --- Admin Ingestion ---
+app.post('/api/admin/ingest/:toolSlug', async (c) => {
+  const toolSlug = c.req.param('toolSlug')
+  try {
+    const db = getDb()
+    const tool = await db.orm.public.Tool.where({ slug: toolSlug }).first()
+    if (!tool) return c.json({ error: 'Tool not found' }, 404)
+
+    console.log('Starting ingestion for ' + tool.name + '...')
+    const packages = await fetchAllPackages(tool.name)
+    
+    let savedCount = 0
+    for (const pkg of packages) {
+      await db.orm.public.Package.upsert({
+        conflictOn: { 
+          toolId: tool.id, 
+          distro: pkg.distro, 
+          packageName: pkg.packageName 
+        },
+        update: { 
+          version: pkg.version, 
+          repo: pkg.repo, 
+          source: pkg.source 
+        },
+        create: {
+          toolId: tool.id,
+          distro: pkg.distro,
+          repo: pkg.repo,
+          packageName: pkg.packageName,
+          version: pkg.version,
+          source: pkg.source
+        }
+      })
+      savedCount++
+    }
+
+    return c.json({ success: true, message: 'Ingested ' + savedCount + ' packages for ' + tool.name })
+  } catch (error) {
+    console.error('Ingestion error:', error)
+    return c.json({ error: 'Ingestion failed' }, 500)
   }
 })
 

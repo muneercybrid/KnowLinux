@@ -51,8 +51,8 @@ model Category {
   slug        String     @unique
   description String
   icon        String
-  letter      String     // A-Z
-  keywords    String     @default("") // Comma-separated search terms
+  letter      String
+  keywords    String     @default("")
   parentId    Int?
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
@@ -63,15 +63,32 @@ model Category {
 }
 
 model Tool {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  slug        String   @unique
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
   description String
   categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime @default(now())
+  category    Category  @relation(fields: [categoryId], references: [id])
+  packages    Package[]
+  createdAt   DateTime  @default(now())
   updatedAt   temporal.updatedAt()
   @@map("tool")
+}
+
+model Package {
+  id          Int      @id @default(autoincrement())
+  toolId      Int
+  tool        Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  distro      String   // e.g., Debian, Arch, Ubuntu
+  repo        String   // e.g., stable, extra, core
+  packageName String   // e.g., nmap
+  version     String   // e.g., 7.94
+  source      String   // e.g., repology, debian
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+  
+  @@unique([toolId, distro, packageName])
+  @@map("package")
 }
 
 model Distribution {

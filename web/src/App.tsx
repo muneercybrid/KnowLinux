@@ -17,6 +17,7 @@ import Account from './pages/Account';
 import FixPage from './pages/Fix';
 import FixDetail from './pages/FixDetail';
 import ComingSoon from './pages/ComingSoon';
+import ToolDetail from './pages/ToolDetail';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -62,7 +63,7 @@ export default function App() {
           <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
 
-          <Route path="/tools/*" element={<ComingSoon />} />
+          <Route path="/tools/:slug" element={<ToolDetail />} />
           <Route path="/guides/*" element={<ComingSoon />} />
           <Route path="/security/*" element={<ComingSoon />} />
 
