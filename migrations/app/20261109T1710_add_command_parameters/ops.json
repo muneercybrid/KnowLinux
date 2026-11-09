@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.command.parameters",
+    "label": "Add column \"parameters\" to \"command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "parameters",
+        "table": "command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"parameters\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "command",
+          "parameters"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"parameters\"",
+        "sql": "ALTER TABLE \"public\".\"command\" ADD COLUMN \"parameters\" text DEFAULT '[]' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"parameters\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "command",
+          "parameters"
+        ]
+      }
+    ]
+  }
+]

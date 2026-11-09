@@ -39,18 +39,23 @@ export default function CommandsPage() {
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center justify-between"><div className="flex items-center justify-between"><h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
               <Terminal className="w-8 h-8 text-brand" /> Command Studio
             </h1>
             <p className="text-[var(--text-muted)] mt-2">Explore Linux commands, understand their syntax, and discover examples.</p>
           </div>
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
-            <input 
-              type="text" 
-              placeholder="Search commands..." 
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-brand"
-            />
+          <div className="flex items-center gap-4">
+            <Link to="/commands/generate" className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
+              <Terminal className="w-4 h-4" /> Open Generator
+            </Link>
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
+              <input 
+                type="text" 
+                placeholder="Search commands..." 
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
           </div>
         </div>
 

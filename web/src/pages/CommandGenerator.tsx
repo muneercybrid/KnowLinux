@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { ArrowLeft, Terminal, Copy, Check, Play } from 'lucide-react';
+import { ArrowLeft, Terminal, Copy, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Command {
