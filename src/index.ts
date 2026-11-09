@@ -28,6 +28,33 @@ async function getCurrentUser(c: any) {
 // --- Public API ---
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
+// --- Categories API ---
+app.get('/api/categories/az', async (c) => {
+  try {
+    const db = getDb()
+    const categories = await db.orm.public.Category.all()
+    
+    // Group by letter
+    const grouped = categories.reduce((acc: any, cat: any) => {
+      const letter = cat.letter ? cat.letter.toUpperCase() : 'OTHER'
+      if (!acc[letter]) acc[letter] = []
+      acc[letter].push(cat)
+      return acc
+    }, {})
+    
+    return c.json(grouped)
+  } catch (error) {
+    console.error('Category AZ error:', error)
+    return c.json({ error: 'Failed to fetch categories' }, 500)
+  }
+})
+
+app.get('/api/categories', async (c) => {
+  const categories = await getDb().orm.public.Category.all()
+  return c.json(categories)
+})
+
+// --- Search API ---
 app.get('/api/search', async (c) => {
   const query = c.req.query('q')
   if (!query || query.trim().length < 2) return c.json({ software: [], commands: [], categories: [] })
@@ -36,7 +63,6 @@ app.get('/api/search', async (c) => {
     const db = getDb()
     const q = query.toLowerCase()
 
-    // Temporary JS-based search (to be replaced by PostgreSQL Full-Text Search later)
     const allSoftware = await db.orm.public.Software.all()
     const software = allSoftware.filter(s => 
       s.name.toLowerCase().includes(q) || 
@@ -64,11 +90,7 @@ app.get('/api/search', async (c) => {
   }
 })
 
-app.get('/api/categories', async (c) => {
-  const categories = await getDb().orm.public.Category.all()
-  return c.json(categories)
-})
-
+// --- Software API ---
 app.get('/api/software', async (c) => {
   const software = await getDb().orm.public.Software.all()
   return c.json(software)
@@ -92,6 +114,7 @@ app.get('/api/software/:slug', async (c) => {
   }
 })
 
+// --- Commands API ---
 app.get('/api/commands', async (c) => {
   const commands = await getDb().orm.public.Command.all()
   return c.json(commands)
@@ -104,7 +127,35 @@ app.get('/api/commands/:slug', async (c) => {
   return c.json(command)
 })
 
-// --- Authentication ---
+// --- Fix API ---
+app.get('/api/fix', async (c) => {
+  const query = c.req.query('q')
+  if (!query || query.trim().length < 3) return c.json([])
+  
+  try {
+    const db = getDb()
+    const q = query.toLowerCase()
+    const allCases = await db.orm.public.TroubleshootingCase.all()
+    
+    const matches = allCases.filter(fix => 
+      fix.title.toLowerCase().includes(q) || 
+      fix.errorSignature.toLowerCase().includes(q)
+    )
+    
+    return c.json(matches)
+  } catch (error) {
+    return c.json({ error: 'Fix search failed' }, 500)
+  }
+})
+
+app.get('/api/fix/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  const fix = await getDb().orm.public.TroubleshootingCase.where({ slug }).first()
+  if (!fix) return c.json({ error: 'Fix not found' }, 404)
+  return c.json(fix)
+})
+
+// --- Authentication API ---
 app.post('/api/auth/register', async (c) => {
   try {
     const { email, password, name } = await c.req.json()
@@ -201,7 +252,8 @@ app.delete('/api/workspace/commands/:id', async (c) => {
   return c.json({ success: true })
 })
 
-// --- Static Files ---
+
+// --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
 app.use('/*', serveStatic({ root: publicDir }))
@@ -210,52 +262,4 @@ app.get('*', serveStatic({ path: path.join(publicDir, 'index.html') }))
 const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`Server running on http://localhost:${info.port}`)
-})
-
-// --- Fix API ---
-app.get('/api/fix', async (c) => {
-  const query = c.req.query('q')
-  if (!query || query.trim().length < 3) return c.json([])
-  
-  try {
-    const db = getDb()
-    const q = query.toLowerCase()
-    const allCases = await db.orm.public.TroubleshootingCase.all()
-    
-    const matches = allCases.filter(c => 
-      c.title.toLowerCase().includes(q) || 
-      c.errorSignature.toLowerCase().includes(q)
-    )
-    
-    return c.json(matches)
-  } catch (error) {
-    return c.json({ error: 'Fix search failed' }, 500)
-  }
-})
-
-app.get('/api/fix/:slug', async (c) => {
-  const slug = c.req.param('slug')
-  const fix = await getDb().orm.public.TroubleshootingCase.where({ slug }).first()
-  if (!fix) return c.json({ error: 'Fix not found' }, 404)
-  return c.json(fix)
-})
-
-// --- Categories API ---
-app.get('/api/categories/az', async (c) => {
-  try {
-    const db = getDb()
-    const categories = await db.orm.public.Category.all()
-    
-    // Group by letter
-    const grouped = categories.reduce((acc: any, cat: any) => {
-      const letter = cat.letter.toUpperCase()
-      if (!acc[letter]) acc[letter] = []
-      acc[letter].push(cat)
-      return acc
-    }, {})
-    
-    return c.json(grouped)
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch categories' }, 500)
-  }
 })
