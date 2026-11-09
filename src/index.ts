@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
-import { hash, verify } from '@node-rs/argon2'
+import bcrypt from 'bcryptjs'
 import { getDb } from './prisma/db.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -62,7 +62,7 @@ app.post('/api/auth/register', async (c) => {
     const existing = await db.orm.public.User.where({ email }).first()
     if (existing) return c.json({ error: 'Email already in use' }, 400)
 
-    const passwordHash = await hash(password, { memoryCost: 19456, timeCost: 2, outputLen: 32, parallelism: 1 })
+    const passwordHash = await bcrypt.hash(password, 10)
     const user = await db.orm.public.User.create({ email, name, passwordHash })
 
     const sessionId = crypto.randomUUID()
@@ -78,9 +78,10 @@ app.post('/api/auth/register', async (c) => {
     })
 
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
-  } catch (err) {
-    console.error(err)
-    return c.json({ error: 'Registration failed' }, 500)
+  } catch (err: any) {
+    console.error('Register Error:', err)
+    // Temporarily expose the error for debugging
+    return c.json({ error: err.message || 'Registration failed' }, 500)
   }
 })
 
@@ -93,7 +94,7 @@ app.post('/api/auth/login', async (c) => {
     const user = await db.orm.public.User.where({ email }).first()
     if (!user || !user.passwordHash) return c.json({ error: 'Invalid credentials' }, 401)
 
-    const valid = await verify(user.passwordHash, password)
+    const valid = await bcrypt.compare(password, user.passwordHash)
     if (!valid) return c.json({ error: 'Invalid credentials' }, 401)
 
     const sessionId = crypto.randomUUID()
@@ -109,9 +110,9 @@ app.post('/api/auth/login', async (c) => {
     })
 
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
-  } catch (err) {
-    console.error(err)
-    return c.json({ error: 'Login failed' }, 500)
+  } catch (err: any) {
+    console.error('Login Error:', err)
+    return c.json({ error: err.message || 'Login failed' }, 500)
   }
 })
 
@@ -120,9 +121,7 @@ app.post('/api/auth/logout', async (c) => {
   if (sessionId) {
     try {
       await getDb().orm.public.Session.where({ id: sessionId }).delete()
-    } catch (e) {
-      // Ignore if session already expired/deleted
-    }
+    } catch (e) {}
     deleteCookie(c, 'knowlinux_session')
   }
   return c.json({ success: true })
