@@ -16,10 +16,10 @@ app.get('/api/users', async (c) => {
 })
 
 // Serve static files from the bundled public directory
-app.use('/*', serveStatic({ root: './public' }))
+app.use('/*', serveStatic({ root: './dist/public' }))
 
 // Fallback to index.html for SPA routing
-app.get('*', serveStatic({ path: './public/index.html' }))
+app.get('*', serveStatic({ path: './dist/public/index.html' }))
 
 const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
