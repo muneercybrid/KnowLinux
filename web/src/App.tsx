@@ -13,13 +13,15 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Workspace from './pages/Workspace';
 import Account from './pages/Account';
+import FixPage from './pages/Fix';
+import FixDetail from './pages/FixDetail';
 import ComingSoon from './pages/ComingSoon';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
-  return children;
+  return <>{children}</>;
 }
 
 function NotFound() {
@@ -50,23 +52,17 @@ export default function App() {
           <Route path="/commands/generate" element={<CommandGenerator />} />
           <Route path="/commands/:slug" element={<CommandDetail />} />
 
+          <Route path="/fix" element={<FixPage />} />
+          <Route path="/fix/:slug" element={<FixDetail />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          <Route path="/workspace" element={
-            <ProtectedRoute>
-              <Workspace />
-            </ProtectedRoute>
-          } />
-          <Route path="/account" element={
-            <ProtectedRoute>
-              <Account />
-            </ProtectedRoute>
-          } />
+          <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
 
           <Route path="/tools/*" element={<ComingSoon />} />
           <Route path="/guides/*" element={<ComingSoon />} />
-          <Route path="/fix/*" element={<ComingSoon />} />
           <Route path="/security/*" element={<ComingSoon />} />
 
           <Route path="*" element={<NotFound />} />
