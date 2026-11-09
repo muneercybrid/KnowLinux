@@ -12,25 +12,31 @@ export interface NormalizedPackage {
 // --- Repology Connector ---
 export async function fetchRepology(toolName: string): Promise<NormalizedPackage[]> {
   try {
-    const res = await fetch(`https://repology.org/api/v1/project/${toolName}`, {
+    // Repology uses the project name (e.g., 'nmap'), not the display name
+    const projectName = toolName.toLowerCase().replace(/\s+/g, '-')
+    const url = `https://repology.org/api/v1/project/${projectName}`
+    console.log(`Fetching Repology: ${url}`)
+
+    const res = await fetch(url, {
       headers: {
         'User-Agent': 'KnowLinux/1.0 (https://knowlinux.tech)'
       }
     })
 
     if (!res.ok) {
-      console.warn(`Repology API error for ${toolName}: ${res.status}`)
+      console.warn(`Repology API error for ${projectName}: ${res.status}`)
       return []
     }
 
     const data = await res.json()
+    console.log(`Repology returned ${Array.isArray(data) ? data.length : 'non-array'} packages`)
+
     if (!Array.isArray(data)) return []
 
-    // Map Repology data to our normalized format
     return data.map((pkg: any) => ({
-      distro: pkg.repo.split('_')[0] || pkg.repo, // e.g., "debian_13" -> "debian"
+      distro: pkg.repo.split('_')[0] || pkg.repo,
       repo: pkg.repo,
-      packageName: pkg.srcname || pkg.binname || toolName,
+      packageName: pkg.srcname || pkg.binname || projectName,
       version: pkg.version || 'unknown',
       source: 'repology'
     }))
@@ -43,20 +49,24 @@ export async function fetchRepology(toolName: string): Promise<NormalizedPackage
 // --- Debian Sources Connector ---
 export async function fetchDebian(toolName: string): Promise<NormalizedPackage[]> {
   try {
-    const res = await fetch(`https://sources.debian.org/api/src/${toolName}/`)
+    const packageName = toolName.toLowerCase().replace(/\s+/g, '-')
+    const url = `https://sources.debian.org/api/src/${packageName}/`
+    console.log(`Fetching Debian: ${url}`)
+
+    const res = await fetch(url)
     
     if (!res.ok) {
-      // 404 is normal if the tool isn't in Debian
       if (res.status !== 404) {
-        console.warn(`Debian API error for ${toolName}: ${res.status}`)
+        console.warn(`Debian API error for ${packageName}: ${res.status}`)
       }
       return []
     }
 
     const data = await res.json()
+    console.log(`Debian returned ${data.versions?.length || 0} versions`)
+
     if (!data.versions || !Array.isArray(data.versions)) return []
 
-    // Extract the latest version
     const latest = data.versions[0]
     if (!latest) return []
 
@@ -77,14 +87,11 @@ export async function fetchDebian(toolName: string): Promise<NormalizedPackage[]
 export async function fetchAllPackages(toolName: string): Promise<NormalizedPackage[]> {
   const results: NormalizedPackage[] = []
   
-  // Fetch from Repology
   const repologyData = await fetchRepology(toolName)
   results.push(...repologyData)
   
-  // Rate limit protection (be polite to Repology)
-  await sleep(1000)
+  await sleep(1000) // Rate limit protection
   
-  // Fetch from Debian (only if Repology didn't already find Debian packages)
   const hasDebian = repologyData.some(p => p.distro === 'debian')
   if (!hasDebian) {
     const debianData = await fetchDebian(toolName)

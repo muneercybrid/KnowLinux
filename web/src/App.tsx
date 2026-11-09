@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Explore from './pages/Explore';
-import CategoryDetail from './pages/CategoryDetail';
 import SoftwarePage from './pages/Software';
 import SoftwareDetail from './pages/SoftwareDetail';
 import CommandsPage from './pages/Commands';
@@ -16,10 +15,8 @@ import Workspace from './pages/Workspace';
 import Account from './pages/Account';
 import FixPage from './pages/Fix';
 import FixDetail from './pages/FixDetail';
+import ToolDetail from './pages/ToolDetail';   // <-- Only once
 import ComingSoon from './pages/ComingSoon';
-import ToolDetail from './pages/ToolDetail';
-import ToolDetail from './pages/ToolDetail';
-import ToolDetail from './pages/ToolDetail';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -47,7 +44,7 @@ export default function App() {
           <Route path="/search" element={<Search />} />
           
           <Route path="/explore" element={<Explore />} />
-          <Route path="/explore/:slug" element={<CategoryDetail />} />
+          <Route path="/explore/:slug" element={<Explore />} />
           
           <Route path="/software" element={<SoftwarePage />} />
           <Route path="/software/:slug" element={<SoftwareDetail />} />
@@ -59,13 +56,14 @@ export default function App() {
           <Route path="/fix" element={<FixPage />} />
           <Route path="/fix/:slug" element={<FixDetail />} />
 
+          <Route path="/tools/:slug" element={<ToolDetail />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
           <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
 
-          <Route path="/tools/:slug" element={<ToolDetail />} />
           <Route path="/guides/*" element={<ComingSoon />} />
           <Route path="/security/*" element={<ComingSoon />} />
 
