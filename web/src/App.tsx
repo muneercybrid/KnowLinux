@@ -2,10 +2,9 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Explore from './pages/Explore';
-import Feature from './pages/Feature';
 import SoftwarePage from './pages/Software';
+import ComingSoon from './pages/ComingSoon';
 
-// A simple 404 component for unmatched routes
 function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center font-sans">
@@ -22,15 +21,25 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/explore/:slug" element={<Explore />} />
-        <Route path="/software" element={<SoftwarePage />} />
         
-        {/* Explicit routes for other core features */}
-        <Route path="/commands" element={<Feature />} />
-        <Route path="/fix" element={<Feature />} />
-        <Route path="/guides" element={<Feature />} />
+        {/* Dynamic Category Explore */}
+        <Route path="/explore" element={<ComingSoon />} />
+        <Route path="/explore/:slug" element={<Explore />} />
+        
+        {/* Software Centre */}
+        <Route path="/software" element={<SoftwarePage />} />
+        <Route path="/software/*" element={<ComingSoon />} />
+        
+        {/* Other Core Modules (Placeholders for now) */}
+        <Route path="/tools/*" element={<ComingSoon />} />
+        <Route path="/commands/*" element={<ComingSoon />} />
+        <Route path="/guides/*" element={<ComingSoon />} />
+        <Route path="/fix/*" element={<ComingSoon />} />
+        <Route path="/security/*" element={<ComingSoon />} />
+        <Route path="/login" element={<ComingSoon />} />
+        <Route path="/register" element={<ComingSoon />} />
 
-        {/* Catch-all for 404s */}
+        {/* True 404 Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
