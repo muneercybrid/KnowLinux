@@ -1,4 +1,4 @@
-import { Terminal, Menu, X } from 'lucide-react';
+import { Terminal, Menu, X, User, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -15,10 +15,12 @@ const navItems = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    setIsProfileOpen(false);
     await logout();
     navigate('/');
   };
@@ -43,10 +45,37 @@ export function Navbar() {
         <div className="hidden lg:flex items-center gap-4">
           <ThemeToggle />
           {user ? (
-            <>
-              <Link to="/workspace" className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors">Workspace</Link>
-              <button onClick={handleLogout} className="text-sm font-medium text-[var(--text-muted)] hover:text-red-400 transition-colors">Logout</button>
-            </>
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-brand/20 border border-brand/30 text-brand font-bold uppercase hover:bg-brand/30 transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+              >
+                {user.name?.charAt(0) || user.email.charAt(0)}
+              </button>
+
+              {/* Profile Dropdown */}
+              {isProfileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-xl py-2 z-50">
+                  <div className="px-4 py-3 border-b border-[var(--border-color)] mb-2">
+                    <p className="text-sm font-bold truncate">{user.name || 'User'}</p>
+                    <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+                  </div>
+                  
+                  <Link to="/workspace" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
+                    <LayoutDashboard className="w-4 h-4" /> Workspace
+                  </Link>
+                  <Link to="/account" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
+                    <Settings className="w-4 h-4" /> Account Settings
+                  </Link>
+                  
+                  <div className="border-t border-[var(--border-color)] mt-2 pt-2">
+                    <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">
+                      <LogOut className="w-4 h-4" /> Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link to="/login" className="text-sm font-medium text-[var(--text-muted)] hover:text-brand transition-colors">Log in</Link>
@@ -63,21 +92,33 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-4">
           {navItems.map((item) => (
             <Link key={item.name} to={item.path} onClick={() => setIsMobileMenuOpen(false)} className="block font-semibold text-sm hover:text-brand">{item.name}</Link>
           ))}
+          
           <div className="pt-4 border-t border-[var(--border-color)] flex flex-col gap-2">
             {user ? (
               <>
-                <Link to="/workspace" className="text-sm hover:text-brand">Workspace</Link>
-                <button onClick={handleLogout} className="text-left text-sm text-red-500">Logout</button>
+                <div className="flex items-center gap-3 mb-2 px-2">
+                  <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center text-brand font-bold uppercase">
+                    {user.name?.charAt(0) || user.email.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">{user.name || 'User'}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
+                  </div>
+                </div>
+                <Link to="/workspace" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-brand">Workspace</Link>
+                <Link to="/account" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-brand">Account Settings</Link>
+                <button onClick={handleLogout} className="text-left text-sm text-red-500 mt-2">Logout</button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-sm hover:text-brand">Log in</Link>
-                <Link to="/register" className="text-sm font-medium text-brand">Sign up</Link>
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-brand">Log in</Link>
+                <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-brand">Sign up</Link>
               </>
             )}
           </div>
@@ -86,3 +127,4 @@ export function Navbar() {
     </header>
   );
 }
+

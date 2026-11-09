@@ -11,6 +11,7 @@ import CommandGenerator from './pages/CommandGenerator';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Workspace from './pages/Workspace';
+import Account from './pages/Account';
 import ComingSoon from './pages/ComingSoon';
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -54,6 +55,11 @@ export default function App() {
           <Route path="/workspace" element={
             <ProtectedRoute>
               <Workspace />
+            </ProtectedRoute>
+          } />
+          <Route path="/account" element={
+            <ProtectedRoute>
+              <Account />
             </ProtectedRoute>
           } />
 
