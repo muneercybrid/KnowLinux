@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-main: #FDFBF7;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #F4F4F4;
+    --bg-input: #EEEEEE;
+    --border-color: #E0E0E0;
+    --text-main: #171918;
+    --text-muted: #5D5D5D;
+    --text-faint: #888888;
+  }
+
+  .dark {
+    --bg-main: #171918;
+    --bg-surface: #1D211F;
+    --bg-elevated: #242A27;
+    --bg-input: #303532;
+    --border-color: #343B36;
+    --text-main: #F5F5F0;
+    --text-muted: #A3AAA5;
+    --text-faint: #777F79;
+  }
+
+  body {
+    @apply antialiased bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200;
+  }
+}

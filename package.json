@@ -4,8 +4,13 @@
   "type": "module",
   "packageManager": "bun@1.3.14",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "bun run contract:emit && tsc",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:web\"",
+    "dev:api": "tsx watch src/index.ts",
+    "dev:web": "cd web && bun run dev",
+    "build": "bun run build:api && bun run build:web && bun run build:copy",
+    "build:api": "bun run contract:emit && tsc",
+    "build:web": "cd web && bun run build",
+    "build:copy": "rm -rf dist/public && cp -r web/dist dist/public",
     "start": "node dist/index.js",
     "contract:emit": "prisma contract emit",
     "migration:plan": "prisma migration plan",
@@ -13,7 +18,7 @@
     "db:update": "prisma db update",
     "db:seed": "tsx src/prisma/seed.ts",
     "compute:login": "prisma auth login",
-    "compute:database:create": "prisma postgres create prisma-compute-hono --branch main",
+    "compute:database:create": "prisma postgres create prisma-compute-hono -branch main",
     "compute:connect": "prisma git connect",
     "compute:open": "prisma service open"
   },
@@ -31,6 +36,7 @@
     "alchemy": "2.0.0-beta.78",
     "prisma": "8.0.0-rc.22",
     "tsx": "4.22.4",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "concurrently": "^9.1.0"
   }
 }
