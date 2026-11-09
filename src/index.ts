@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { Temporal } from 'temporal-polyfill'
 import { getDb } from './prisma/db.js'
 import { fetchAllPackages } from './services/connectors.js'
-import { liveSearchRepology } from './services/live-search.js'
+import { liveSearchRepology, debugRepology } from './services/live-search.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -323,6 +323,22 @@ app.post('/api/admin/ingest-all', async (c) => {
     console.error('Bulk Ingestion error:', error)
     return c.json({ error: 'Bulk ingestion failed' }, 500)
   }
+})
+
+// --- Debug Endpoint ---
+app.get('/api/debug/repology', async (c) => {
+  const q = c.req.query('q')
+  if (!q) return c.json({ error: 'Provide ?q=name' })
+  const result = await debugRepology(q)
+  return c.json(result)
+})
+
+// --- Live Search API ---
+app.get('/api/live-search', async (c) => {
+  const q = c.req.query('q')
+  if (!q) return c.json([])
+  const results = await liveSearchRepology(q)
+  return c.json(results)
 })
 
 // --- Static Files (MUST BE LAST) ---
