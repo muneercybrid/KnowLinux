@@ -117,3 +117,18 @@ model Command {
   updatedAt   temporal.updatedAt()
   @@map("command")
 }
+
+model TroubleshootingCase {
+  id             Int      @id @default(autoincrement())
+  title          String
+  slug           String   @unique
+  errorSignature String   // Text to match against user input
+  explanation    String
+  causes         String   // JSON array of possible causes
+  diagnostics    String   // JSON array of safe diagnostic commands
+  fixes          String   // JSON array of repair commands
+  verification   String
+  createdAt      DateTime @default(now())
+  updatedAt      temporal.updatedAt()
+  @@map("troubleshooting_case")
+}

@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, Search, ArrowRight } from 'lucide-react';
 
 export default function FixPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

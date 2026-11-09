@@ -211,3 +211,31 @@ const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`Server running on http://localhost:${info.port}`)
 })
+
+// --- Fix API ---
+app.get('/api/fix', async (c) => {
+  const query = c.req.query('q')
+  if (!query || query.trim().length < 3) return c.json([])
+  
+  try {
+    const db = getDb()
+    const q = query.toLowerCase()
+    const allCases = await db.orm.public.TroubleshootingCase.all()
+    
+    const matches = allCases.filter(c => 
+      c.title.toLowerCase().includes(q) || 
+      c.errorSignature.toLowerCase().includes(q)
+    )
+    
+    return c.json(matches)
+  } catch (error) {
+    return c.json({ error: 'Fix search failed' }, 500)
+  }
+})
+
+app.get('/api/fix/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  const fix = await getDb().orm.public.TroubleshootingCase.where({ slug }).first()
+  if (!fix) return c.json({ error: 'Fix not found' }, 404)
+  return c.json(fix)
+})

@@ -83,20 +83,9 @@ async function main() {
   }
 
   const commandsData = [
-    { name: 'ls', slug: 'ls', description: 'List directory contents.', syntax: 'ls [OPTION]... [FILE]...', category: 'Filesystem', examples: JSON.stringify([{ desc: 'List all files including hidden', cmd: 'ls -la' }, { desc: 'List files sorted by size', cmd: 'ls -lhS' }]), parameters: JSON.stringify([]) },
-    { name: 'grep', slug: 'grep', description: 'Search for patterns in files or standard input.', syntax: 'grep [OPTION]... PATTERNS [FILE]...', category: 'Text Processing', examples: JSON.stringify([{ desc: 'Search for a word in a file', cmd: 'grep "error" /var/log/syslog' }]), parameters: JSON.stringify([
-      { name: 'pattern', label: 'Search Pattern', type: 'text', placeholder: 'e.g., error', required: true, flag: '' },
-      { name: 'file', label: 'Target File', type: 'text', placeholder: 'e.g., /var/log/syslog', required: true, flag: '' },
-      { name: 'ignoreCase', label: 'Ignore Case (-i)', type: 'boolean', required: false, flag: '-i' }
-    ]) },
-    { name: 'chmod', slug: 'chmod', description: 'Change file mode bits (permissions).', syntax: 'chmod [OPTION]... MODE[,MODE]... FILE...', category: 'Permissions', examples: JSON.stringify([{ desc: 'Give execute permission to user', cmd: 'chmod +x script.sh' }]), parameters: JSON.stringify([]) },
-    { name: 'systemctl', slug: 'systemctl', description: 'Control the systemd system and service manager.', syntax: 'systemctl [OPTIONS...] COMMAND [UNIT...]', category: 'System Administration', examples: JSON.stringify([{ desc: 'Start a service', cmd: 'sudo systemctl start nginx' }]), parameters: JSON.stringify([]) },
-    { name: 'nmap', slug: 'nmap', description: 'Network exploration tool and security / port scanner.', syntax: 'nmap [Scan Type...] [Options] {target specification}', category: 'Networking', examples: JSON.stringify([{ desc: 'Scan for open ports on a target', cmd: 'nmap -sV 192.168.1.1' }]), parameters: JSON.stringify([
-      { name: 'target', label: 'Target IP / Hostname', type: 'text', placeholder: 'e.g., 192.168.1.1', required: true, flag: '' },
-      { name: 'scanType', label: 'Scan Type', type: 'select', options: ['-sS (SYN Scan)', '-sT (TCP Connect)', '-sU (UDP Scan)'], required: false, flag: '' },
-      { name: 'version', label: 'Service Version Detection (-sV)', type: 'boolean', required: false, flag: '-sV' },
-      { name: 'os', label: 'OS Detection (-O)', type: 'boolean', required: false, flag: '-O' }
-    ]) },
+    { name: 'ls', slug: 'ls', description: 'List directory contents.', syntax: 'ls [OPTION]... [FILE]...', category: 'Filesystem', examples: JSON.stringify([{ desc: 'List all files including hidden', cmd: 'ls -la' }]), parameters: JSON.stringify([]) },
+    { name: 'grep', slug: 'grep', description: 'Search for patterns in files or standard input.', syntax: 'grep [OPTION]... PATTERNS [FILE]...', category: 'Text Processing', examples: JSON.stringify([{ desc: 'Search for a word in a file', cmd: 'grep "error" /var/log/syslog' }]), parameters: JSON.stringify([{ name: 'pattern', label: 'Search Pattern', type: 'text', placeholder: 'e.g., error', required: true, flag: '' }, { name: 'file', label: 'Target File', type: 'text', placeholder: 'e.g., /var/log/syslog', required: true, flag: '' }]) },
+    { name: 'nmap', slug: 'nmap', description: 'Network exploration tool and security / port scanner.', syntax: 'nmap [Scan Type...] [Options] {target specification}', category: 'Networking', examples: JSON.stringify([{ desc: 'Scan for open ports on a target', cmd: 'nmap -sV 192.168.1.1' }]), parameters: JSON.stringify([{ name: 'target', label: 'Target IP / Hostname', type: 'text', placeholder: 'e.g., 192.168.1.1', required: true, flag: '' }, { name: 'version', label: 'Service Version Detection (-sV)', type: 'boolean', required: false, flag: '-sV' }]) },
   ]
 
   for (const cmd of commandsData) {
@@ -104,6 +93,68 @@ async function main() {
       conflictOn: { slug: cmd.slug },
       update: { parameters: cmd.parameters },
       create: cmd,
+    })
+  }
+
+  // --- Troubleshooting Cases ---
+  const fixesData = [
+    {
+      title: 'Could not get lock /var/lib/dpkg/lock-frontend',
+      slug: 'apt-lock-error',
+      errorSignature: 'Could not get lock /var/lib/dpkg/lock-frontend. It is held by process',
+      explanation: 'This happens when the APT package manager is already running in the background (e.g., automatic updates or another terminal). Linux uses lock files to prevent multiple processes from modifying packages simultaneously.',
+      causes: JSON.stringify(['Another apt/dpkg process is running in another terminal.', 'An unattended upgrade is running in the background.', 'A previous apt process crashed and left a stale lock file.']),
+      diagnostics: JSON.stringify(['ps aux | grep -i apt', 'sudo lsof /var/lib/dpkg/lock-frontend']),
+      fixes: JSON.stringify(['Wait for the background process to finish.', 'If no process is running, remove the stale locks: sudo rm /var/lib/dpkg/lock-frontend', 'Reconfigure packages: sudo dpkg --configure -a']),
+      verification: 'Run "sudo apt update" to ensure it completes without lock errors.'
+    },
+    {
+      title: 'Permission denied (publickey)',
+      slug: 'ssh-permission-denied',
+      errorSignature: 'Permission denied (publickey)',
+      explanation: 'This SSH error means the server rejected your connection because the public key presented by your client does not match any authorized keys on the server, or the server is configured to reject password authentication.',
+      causes: JSON.stringify(['The public key is not in ~/.ssh/authorized_keys on the server.', 'Incorrect file permissions on the server (authorized_keys must be 600, .ssh must be 700).', 'Wrong username.', 'SSH server configuration disallows the authentication method.']),
+      diagnostics: JSON.stringify(['ssh -vvv user@hostname', 'Check server logs: sudo tail -f /var/log/auth.log']),
+      fixes: JSON.stringify(['Ensure your public key is copied to the server: ssh-copy-id user@hostname', 'Fix permissions on the server: chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys']),
+      verification: 'Attempt to SSH again: ssh user@hostname'
+    },
+    {
+      title: 'Command not found',
+      slug: 'command-not-found',
+      errorSignature: 'bash: command: command not found',
+      explanation: 'The shell cannot locate the executable for the command you typed. This usually means the program is not installed, or it is installed in a directory not included in your PATH environment variable.',
+      causes: JSON.stringify(['The software package is not installed.', 'The binary is outside the PATH.', 'Typo in the command name.']),
+      diagnostics: JSON.stringify(['which command_name', 'echo $PATH', 'dpkg -l | grep command_name (Debian/Ubuntu)']),
+      fixes: JSON.stringify(['Install the package: sudo apt install <package-name>', 'If installed, find its path: find / -name "command_name" 2>/dev/null', 'Add the path to PATH: export PATH=$PATH:/new/path']),
+      verification: 'Run the command again to see if it executes.'
+    },
+    {
+      title: 'Job for nginx.service failed because the control process exited with error code',
+      slug: 'systemd-service-failed',
+      errorSignature: 'Job for nginx.service failed because the control process exited with error code',
+      explanation: 'A Systemd service failed to start. This could be due to a syntax error in its configuration file, port conflict, or missing dependencies.',
+      causes: JSON.stringify(['Syntax error in the configuration file.', 'The port the service wants to use is already in use.', 'Missing required files or directories.']),
+      diagnostics: JSON.stringify(['systemctl status nginx', 'journalctl -xeu nginx.service', 'nginx -t']),
+      fixes: JSON.stringify(['Fix the configuration error reported in the logs.', 'Check for port conflicts: ss -tulpn | grep :80', 'Restart the service: sudo systemctl restart nginx']),
+      verification: 'systemctl status nginx should show "active (running)".'
+    },
+    {
+      title: 'No space left on device',
+      slug: 'no-space-left',
+      errorSignature: 'No space left on device',
+      explanation: 'The disk or partition where the system is trying to write data has run out of available storage space.',
+      causes: JSON.stringify(['Large log files filling up /var/log.', 'Downloaded files or packages using too much space.', 'Deleted files still held open by running processes.', 'Inodes have been exhausted.']),
+      diagnostics: JSON.stringify(['df -h', 'du -sh /* | sort -hr | head -10', 'df -i']),
+      fixes: JSON.stringify(['Clear package cache: sudo apt clean', 'Remove old kernels (Debian/Ubuntu): sudo apt autoremove --purge', 'Truncate large log files: sudo truncate -s 0 /var/log/largefile.log', 'Find deleted but open files: sudo lsof / | grep deleted']),
+      verification: 'Run df -h again to confirm space has been freed.'
+    }
+  ];
+
+  for (const fix of fixesData) {
+    await db.orm.public.TroubleshootingCase.upsert({
+      conflictOn: { slug: fix.slug },
+      update: {},
+      create: fix,
     })
   }
 
