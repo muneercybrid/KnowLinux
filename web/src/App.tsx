@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Explore from './pages/Explore';
+import CategoryDetail from './pages/CategoryDetail';
 import SoftwarePage from './pages/Software';
 import SoftwareDetail from './pages/SoftwareDetail';
 import CommandsPage from './pages/Commands';
@@ -42,8 +43,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           
-          <Route path="/explore" element={<ComingSoon />} />
-          <Route path="/explore/:slug" element={<Explore />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/explore/:slug" element={<CategoryDetail />} />
           
           <Route path="/software" element={<SoftwarePage />} />
           <Route path="/software/:slug" element={<SoftwareDetail />} />
