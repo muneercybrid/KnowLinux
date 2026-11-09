@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Explore from './pages/Explore';
 import SoftwarePage from './pages/Software';
+import SoftwareDetail from './pages/SoftwareDetail';
 import ComingSoon from './pages/ComingSoon';
 
 function NotFound() {
@@ -28,9 +29,9 @@ export default function App() {
         
         {/* Software Centre */}
         <Route path="/software" element={<SoftwarePage />} />
-        <Route path="/software/*" element={<ComingSoon />} />
+        <Route path="/software/:slug" element={<SoftwareDetail />} />
         
-        {/* Other Core Modules (Placeholders for now) */}
+        {/* Other Core Modules */}
         <Route path="/tools/*" element={<ComingSoon />} />
         <Route path="/commands/*" element={<ComingSoon />} />
         <Route path="/guides/*" element={<ComingSoon />} />

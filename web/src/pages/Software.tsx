@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 interface Software {
   id: number;
   name: string;
+  slug: string;
   description: string;
   category: string;
 }
@@ -14,21 +15,16 @@ interface Software {
 export default function SoftwarePage() {
   const [software, setSoftware] = useState<Software[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/software')
-      .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
         setSoftware(data);
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
-        setError("Failed to load software. The database might be empty or the connection failed.");
         setLoading(false);
       });
   }, []);
@@ -61,13 +57,11 @@ export default function SoftwarePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full text-center py-12 text-[var(--text-muted)]">Loading software...</div>
-          ) : error ? (
-            <div className="col-span-full text-center py-12 text-red-500">{error}</div>
           ) : software.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-[var(--text-muted)]">No software found. The database is currently empty.</div>
+            <div className="col-span-full text-center py-12 text-[var(--text-muted)]">No software found.</div>
           ) : (
             software.map((app) => (
-              <div key={app.id} className="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors cursor-pointer group">
+              <Link to={`/software/${app.slug}`} key={app.id} className="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors cursor-pointer group block">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center">
                     <Box className="w-6 h-6 text-[var(--text-muted)] group-hover:text-brand transition-colors" />
@@ -79,7 +73,7 @@ export default function SoftwarePage() {
                 <div className="flex items-center text-sm font-medium text-brand">
                   View Install Guide <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>
