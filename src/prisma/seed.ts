@@ -21,7 +21,11 @@ async function main() {
   ]
 
   for (const cat of categories) {
-    await db.orm.public.Category.create(cat)
+    await db.orm.public.Category.upsert({
+      where: { slug: cat.slug },
+      update: {},
+      create: cat,
+    })
   }
 
   const distros = [
@@ -33,7 +37,11 @@ async function main() {
   ]
 
   for (const distro of distros) {
-    await db.orm.public.Distribution.create(distro)
+    await db.orm.public.Distribution.upsert({
+      where: { slug: distro.slug },
+      update: {},
+      create: distro,
+    })
   }
 
   const softwareData = [
@@ -43,21 +51,34 @@ async function main() {
   ]
 
   for (const soft of softwareData) {
-    const createdSoft = await db.orm.public.Software.create({
-      name: soft.name,
-      slug: soft.slug,
-      description: soft.description,
-      category: soft.category,
-      isVerified: true
+    const createdSoft = await db.orm.public.Software.upsert({
+      where: { slug: soft.slug },
+      update: {},
+      create: {
+        name: soft.name,
+        slug: soft.slug,
+        description: soft.description,
+        category: soft.category,
+        isVerified: true
+      }
     })
 
     for (const [distroSlug, command] of Object.entries(soft.commands)) {
       const distro = await db.orm.public.Distribution.where({ slug: distroSlug }).first()
       if (distro) {
-        await db.orm.public.SoftwareDistribution.create({
-          softwareId: createdSoft.id,
-          distributionId: distro.id,
-          installCommand: command
+        await db.orm.public.SoftwareDistribution.upsert({
+          where: {
+            softwareId_distributionId: {
+              softwareId: createdSoft.id,
+              distributionId: distro.id
+            }
+          },
+          update: { installCommand: command },
+          create: {
+            softwareId: createdSoft.id,
+            distributionId: distro.id,
+            installCommand: command
+          }
         })
       }
     }
