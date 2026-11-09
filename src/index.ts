@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url'
 
 const app = new Hono()
 
-// Helper to get the current user
 async function getCurrentUser(c: any) {
   const sessionId = getCookie(c, 'knowlinux_session')
   if (!sessionId) return null
@@ -28,23 +27,19 @@ async function getCurrentUser(c: any) {
 // --- Public API ---
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
-// --- Categories API ---
+// --- Categories ---
 app.get('/api/categories/az', async (c) => {
   try {
     const db = getDb()
     const categories = await db.orm.public.Category.all()
-    
-    // Group by letter
     const grouped = categories.reduce((acc: any, cat: any) => {
       const letter = cat.letter ? cat.letter.toUpperCase() : 'OTHER'
       if (!acc[letter]) acc[letter] = []
       acc[letter].push(cat)
       return acc
     }, {})
-    
     return c.json(grouped)
   } catch (error) {
-    console.error('Category AZ error:', error)
     return c.json({ error: 'Failed to fetch categories' }, 500)
   }
 })
@@ -54,43 +49,38 @@ app.get('/api/categories', async (c) => {
   return c.json(categories)
 })
 
-// --- Search API ---
+app.get('/api/categories/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  try {
+    const db = getDb()
+    const category = await db.orm.public.Category.where({ slug }).include('children').include('tools').first()
+    if (!category) return c.json({ error: 'Category not found' }, 404)
+    return c.json(category)
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch category' }, 500)
+  }
+})
+
+// --- Search ---
 app.get('/api/search', async (c) => {
   const query = c.req.query('q')
   if (!query || query.trim().length < 2) return c.json({ software: [], commands: [], categories: [] })
-
   try {
     const db = getDb()
     const q = query.toLowerCase()
-
     const allSoftware = await db.orm.public.Software.all()
-    const software = allSoftware.filter(s => 
-      s.name.toLowerCase().includes(q) || 
-      (s.description && s.description.toLowerCase().includes(q)) || 
-      (s.category && s.category.toLowerCase().includes(q))
-    ).slice(0, 10)
-
+    const software = allSoftware.filter(s => s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q))).slice(0, 10)
     const allCommands = await db.orm.public.Command.all()
-    const commands = allCommands.filter(cmd => 
-      cmd.name.toLowerCase().includes(q) || 
-      (cmd.description && cmd.description.toLowerCase().includes(q)) || 
-      (cmd.category && cmd.category.toLowerCase().includes(q))
-    ).slice(0, 10)
-
+    const commands = allCommands.filter(cmd => cmd.name.toLowerCase().includes(q) || (cmd.description && cmd.description.toLowerCase().includes(q))).slice(0, 10)
     const allCategories = await db.orm.public.Category.all()
-    const categories = allCategories.filter(cat => 
-      cat.name.toLowerCase().includes(q) || 
-      (cat.description && cat.description.toLowerCase().includes(q))
-    ).slice(0, 5)
-
+    const categories = allCategories.filter(cat => cat.name.toLowerCase().includes(q) || (cat.description && cat.description.toLowerCase().includes(q))).slice(0, 5)
     return c.json({ software, commands, categories })
   } catch (error) {
-    console.error('Search error:', error)
     return c.json({ error: 'Search failed' }, 500)
   }
 })
 
-// --- Software API ---
+// --- Software ---
 app.get('/api/software', async (c) => {
   const software = await getDb().orm.public.Software.all()
   return c.json(software)
@@ -114,7 +104,7 @@ app.get('/api/software/:slug', async (c) => {
   }
 })
 
-// --- Commands API ---
+// --- Commands ---
 app.get('/api/commands', async (c) => {
   const commands = await getDb().orm.public.Command.all()
   return c.json(commands)
@@ -127,21 +117,15 @@ app.get('/api/commands/:slug', async (c) => {
   return c.json(command)
 })
 
-// --- Fix API ---
+// --- Fix ---
 app.get('/api/fix', async (c) => {
   const query = c.req.query('q')
   if (!query || query.trim().length < 3) return c.json([])
-  
   try {
     const db = getDb()
     const q = query.toLowerCase()
     const allCases = await db.orm.public.TroubleshootingCase.all()
-    
-    const matches = allCases.filter(fix => 
-      fix.title.toLowerCase().includes(q) || 
-      fix.errorSignature.toLowerCase().includes(q)
-    )
-    
+    const matches = allCases.filter(fix => fix.title.toLowerCase().includes(q) || fix.errorSignature.toLowerCase().includes(q))
     return c.json(matches)
   } catch (error) {
     return c.json({ error: 'Fix search failed' }, 500)
@@ -155,7 +139,7 @@ app.get('/api/fix/:slug', async (c) => {
   return c.json(fix)
 })
 
-// --- Authentication API ---
+// --- Auth ---
 app.post('/api/auth/register', async (c) => {
   try {
     const { email, password, name } = await c.req.json()
@@ -163,21 +147,12 @@ app.post('/api/auth/register', async (c) => {
     const db = getDb()
     const existing = await db.orm.public.User.where({ email }).first()
     if (existing) return c.json({ error: 'Email already in use' }, 400)
-    
     const passwordHash = await bcrypt.hash(password, 10)
     const user = await db.orm.public.User.create({ email, name, passwordHash })
-    
     const sessionId = crypto.randomUUID()
     const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
-    
-    setCookie(c, 'knowlinux_session', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60,
-      path: '/'
-    })
+    setCookie(c, 'knowlinux_session', sessionId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict', maxAge: 7 * 24 * 60 * 60, path: '/' })
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (err: any) {
     return c.json({ error: err.message || 'Registration failed' }, 500)
@@ -191,21 +166,12 @@ app.post('/api/auth/login', async (c) => {
     const db = getDb()
     const user = await db.orm.public.User.where({ email }).first()
     if (!user || !user.passwordHash) return c.json({ error: 'Invalid credentials' }, 401)
-    
     const valid = await bcrypt.compare(password, user.passwordHash)
     if (!valid) return c.json({ error: 'Invalid credentials' }, 401)
-    
     const sessionId = crypto.randomUUID()
     const expiresAt = Temporal.Now.instant().add({ hours: 24 * 7 })
     await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
-    
-    setCookie(c, 'knowlinux_session', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60,
-      path: '/'
-    })
+    setCookie(c, 'knowlinux_session', sessionId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict', maxAge: 7 * 24 * 60 * 60, path: '/' })
     return c.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (err: any) {
     return c.json({ error: err.message || 'Login failed' }, 500)
@@ -227,7 +193,7 @@ app.get('/api/auth/me', async (c) => {
   return c.json({ user: { id: user.id, email: user.email, name: user.name } })
 })
 
-// --- Workspace API ---
+// --- Workspace ---
 app.get('/api/workspace/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
@@ -251,7 +217,6 @@ app.delete('/api/workspace/commands/:id', async (c) => {
   await getDb().orm.public.SavedCommand.where({ id, userId: user.id }).delete()
   return c.json({ success: true })
 })
-
 
 // --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
