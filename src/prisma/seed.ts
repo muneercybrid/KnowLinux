@@ -5,7 +5,6 @@ const db = getDb()
 async function main() {
   console.log('Seeding database...')
 
-  // 1. Seed Categories
   const categories = [
     { name: 'Linux Fundamentals', slug: 'linux-fundamentals', description: 'Core concepts, filesystem, and shell basics.', icon: 'Terminal' },
     { name: 'System Administration', slug: 'system-administration', description: 'Manage users, services, and processes.', icon: 'Server' },
@@ -25,7 +24,6 @@ async function main() {
     await db.orm.public.Category.create(cat)
   }
 
-  // 2. Seed Distributions
   const distros = [
     { name: 'Kali Linux', slug: 'kali', family: 'Debian', packageManager: 'apt' },
     { name: 'Ubuntu', slug: 'ubuntu', family: 'Debian', packageManager: 'apt' },
@@ -38,7 +36,6 @@ async function main() {
     await db.orm.public.Distribution.create(distro)
   }
 
-  // 3. Seed Software and their Distribution install commands
   const softwareData = [
     { name: 'Docker', slug: 'docker', description: 'Containerization platform for building and running applications.', category: 'DevOps', commands: { kali: 'sudo apt install docker.io', ubuntu: 'sudo apt install docker.io', debian: 'sudo apt install docker.io', arch: 'sudo pacman -S docker', fedora: 'sudo dnf install docker' } },
     { name: 'Visual Studio Code', slug: 'vscode', description: 'Code editor redefined and optimized for building and debugging modern web and cloud applications.', category: 'Development', commands: { kali: 'sudo apt install code', ubuntu: 'sudo snap install code --classic', debian: 'sudo apt install code', arch: 'sudo pacman -S code', fedora: 'sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && sudo dnf install code' } },

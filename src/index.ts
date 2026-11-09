@@ -7,22 +7,23 @@ import { fileURLToPath } from 'url'
 
 const app = new Hono()
 
-// API routes
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
+app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
 app.get('/api/categories', async (c) => {
-  try {
-    const categories = await getDb().orm.public.Category.all()
-    return c.json(categories)
-  } catch (error) {
-    console.error('Failed to fetch categories:', error)
-    return c.json({ error: 'Failed to fetch categories' }, 500)
-  }
+  const categories = await getDb().orm.public.Category.all()
+  return c.json(categories)
 })
 
-// Static files
+app.get('/api/software', async (c) => {
+  const software = await getDb().orm.public.Software.all()
+  return c.json(software)
+})
+
+app.get('/api/distributions', async (c) => {
+  const distros = await getDb().orm.public.Distribution.all()
+  return c.json(distros)
+})
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
 app.use('/*', serveStatic({ root: publicDir }))
@@ -30,5 +31,5 @@ app.get('*', serveStatic({ path: path.join(publicDir, 'index.html') }))
 
 const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`Server is running on http://localhost:${info.port}`)
+  console.log(`Server running on http://localhost:${info.port}`)
 })
