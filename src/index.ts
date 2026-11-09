@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import { Temporal } from 'temporal-polyfill'
 import { getDb } from './prisma/db.js'
 import { fetchAllPackages } from './services/connectors.js'
+import { liveSearchRepology } from './services/live-search.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -288,6 +289,40 @@ app.delete('/api/workspace/commands/:id', async (c) => {
   const id = parseInt(c.req.param('id'))
   await getDb().orm.public.SavedCommand.where({ id, userId: user.id }).delete()
   return c.json({ success: true })
+})
+
+// --- Live Search ---
+app.get('/api/live-search', async (c) => {
+  const q = c.req.query('q')
+  if (!q) return c.json([])
+  const results = await liveSearchRepology(q)
+  return c.json(results)
+})
+
+// --- Bulk Ingest ---
+app.post('/api/admin/ingest-all', async (c) => {
+  try {
+    const db = getDb()
+    const tools = await db.orm.public.Tool.all()
+    let totalPackages = 0
+    for (const tool of tools) {
+      console.log('Ingesting ' + tool.name + '...')
+      const packages = await fetchAllPackages(tool.name)
+      for (const pkg of packages) {
+        await db.orm.public.Package.upsert({
+          conflictOn: { toolId: tool.id, distro: pkg.distro, packageName: pkg.packageName },
+          update: { version: pkg.version, repo: pkg.repo, source: pkg.source },
+          create: { toolId: tool.id, distro: pkg.distro, repo: pkg.repo, packageName: pkg.packageName, version: pkg.version, source: pkg.source }
+        })
+        totalPackages++
+      }
+      await new Promise(r => setTimeout(r, 1000))
+    }
+    return c.json({ success: true, message: 'Ingested ' + totalPackages + ' packages across ' + tools.length + ' tools.' })
+  } catch (error) {
+    console.error('Bulk Ingestion error:', error)
+    return c.json({ error: 'Bulk ingestion failed' }, 500)
+  }
 })
 
 // --- Static Files (MUST BE LAST) ---
