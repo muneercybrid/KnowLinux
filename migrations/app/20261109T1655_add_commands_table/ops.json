@@ -1,0 +1,125 @@
+[
+  {
+    "id": "table.command",
+    "label": "Create table \"command\"",
+    "summary": "Creates table \"command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"command\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"command\"",
+        "sql": "CREATE TABLE \"public\".\"command\" (\n  \"category\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text NOT NULL,\n  \"examples\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  \"syntax\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"command\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"command\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.command.command_name_key",
+    "label": "Add unique constraint on \"command\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "command_name_key",
+        "table": "command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"command_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "command_name_key",
+          "public",
+          "\"public\".\"command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"command_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"command\" ADD CONSTRAINT \"command_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"command_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "command_name_key",
+          "public",
+          "\"public\".\"command\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.command.command_slug_key",
+    "label": "Add unique constraint on \"command\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "command_slug_key",
+        "table": "command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"command_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "command_slug_key",
+          "public",
+          "\"public\".\"command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"command_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"command\" ADD CONSTRAINT \"command_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"command_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "command_slug_key",
+          "public",
+          "\"public\".\"command\""
+        ]
+      }
+    ]
+  }
+]

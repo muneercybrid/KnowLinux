@@ -90,7 +90,7 @@ model Command {
   description String
   syntax      String
   category    String
-  examples    String   // JSON stringified array of examples
+  examples    String
   createdAt   DateTime @default(now())
   updatedAt   temporal.updatedAt()
   @@map("command")
