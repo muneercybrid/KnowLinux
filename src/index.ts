@@ -1,12 +1,15 @@
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { hash, verify } from '@node-rs/argon2'
 import { getDb } from './prisma/db.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 const app = new Hono()
 
+// --- Public API ---
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
 app.get('/api/categories', async (c) => {
@@ -49,6 +52,99 @@ app.get('/api/commands/:slug', async (c) => {
   return c.json(command)
 })
 
+// --- Authentication ---
+app.post('/api/auth/register', async (c) => {
+  try {
+    const { email, password, name } = await c.req.json()
+    if (!email || !password) return c.json({ error: 'Email and password required' }, 400)
+
+    const db = getDb()
+    const existing = await db.orm.public.User.where({ email }).first()
+    if (existing) return c.json({ error: 'Email already in use' }, 400)
+
+    const passwordHash = await hash(password, { memoryCost: 19456, timeCost: 2, outputLen: 32, parallelism: 1 })
+    const user = await db.orm.public.User.create({ email, name, passwordHash })
+
+    const sessionId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
+
+    setCookie(c, 'knowlinux_session', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/'
+    })
+
+    return c.json({ user: { id: user.id, email: user.email, name: user.name } })
+  } catch (err) {
+    console.error(err)
+    return c.json({ error: 'Registration failed' }, 500)
+  }
+})
+
+app.post('/api/auth/login', async (c) => {
+  try {
+    const { email, password } = await c.req.json()
+    if (!email || !password) return c.json({ error: 'Email and password required' }, 400)
+
+    const db = getDb()
+    const user = await db.orm.public.User.where({ email }).first()
+    if (!user || !user.passwordHash) return c.json({ error: 'Invalid credentials' }, 401)
+
+    const valid = await verify(user.passwordHash, password)
+    if (!valid) return c.json({ error: 'Invalid credentials' }, 401)
+
+    const sessionId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    await db.orm.public.Session.create({ id: sessionId, userId: user.id, expiresAt })
+
+    setCookie(c, 'knowlinux_session', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/'
+    })
+
+    return c.json({ user: { id: user.id, email: user.email, name: user.name } })
+  } catch (err) {
+    console.error(err)
+    return c.json({ error: 'Login failed' }, 500)
+  }
+})
+
+app.post('/api/auth/logout', async (c) => {
+  const sessionId = getCookie(c, 'knowlinux_session')
+  if (sessionId) {
+    try {
+      await getDb().orm.public.Session.where({ id: sessionId }).delete()
+    } catch (e) {
+      // Ignore if session already expired/deleted
+    }
+    deleteCookie(c, 'knowlinux_session')
+  }
+  return c.json({ success: true })
+})
+
+app.get('/api/auth/me', async (c) => {
+  const sessionId = getCookie(c, 'knowlinux_session')
+  if (!sessionId) return c.json({ user: null })
+
+  try {
+    const session = await getDb().orm.public.Session.where({ id: sessionId }).include('user').first()
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      deleteCookie(c, 'knowlinux_session')
+      return c.json({ user: null })
+    }
+    return c.json({ user: { id: session.user.id, email: session.user.email, name: session.user.name } })
+  } catch (err) {
+    return c.json({ user: null })
+  }
+})
+
+// --- Static Files ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
 app.use('/*', serveStatic({ root: publicDir }))

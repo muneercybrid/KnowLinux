@@ -1,14 +1,25 @@
 // use prisma-8
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?  @unique
-  name      String?
-  posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt temporal.updatedAt()
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  username     String?   @unique
+  name         String?
+  passwordHash String?
+  posts        Post[]
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    temporal.updatedAt()
   @@map("user")
+}
+
+model Session {
+  id        String   @id
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@map("session")
 }
 
 model Post {
@@ -90,8 +101,8 @@ model Command {
   description String
   syntax      String
   category    String
-  examples    String   // JSON stringified array of examples
-  parameters  String   @default("[]") // JSON stringified array of parameter definitions
+  examples    String
+  parameters  String   @default("[]")
   createdAt   DateTime @default(now())
   updatedAt   temporal.updatedAt()
   @@map("command")

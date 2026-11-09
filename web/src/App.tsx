@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Explore from './pages/Explore';
@@ -7,7 +8,17 @@ import SoftwareDetail from './pages/SoftwareDetail';
 import CommandsPage from './pages/Commands';
 import CommandDetail from './pages/CommandDetail';
 import CommandGenerator from './pages/CommandGenerator';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Workspace from './pages/Workspace';
 import ComingSoon from './pages/ComingSoon';
+
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
 
 function NotFound() {
   return (
@@ -21,30 +32,39 @@ function NotFound() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        
-        <Route path="/explore" element={<ComingSoon />} />
-        <Route path="/explore/:slug" element={<Explore />} />
-        
-        <Route path="/software" element={<SoftwarePage />} />
-        <Route path="/software/:slug" element={<SoftwareDetail />} />
-        
-        <Route path="/commands" element={<CommandsPage />} />
-        <Route path="/commands/generate" element={<CommandGenerator />} />
-        <Route path="/commands/:slug" element={<CommandDetail />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
+          
+          <Route path="/explore" element={<ComingSoon />} />
+          <Route path="/explore/:slug" element={<Explore />} />
+          
+          <Route path="/software" element={<SoftwarePage />} />
+          <Route path="/software/:slug" element={<SoftwareDetail />} />
+          
+          <Route path="/commands" element={<CommandsPage />} />
+          <Route path="/commands/generate" element={<CommandGenerator />} />
+          <Route path="/commands/:slug" element={<CommandDetail />} />
 
-        <Route path="/tools/*" element={<ComingSoon />} />
-        <Route path="/guides/*" element={<ComingSoon />} />
-        <Route path="/fix/*" element={<ComingSoon />} />
-        <Route path="/security/*" element={<ComingSoon />} />
-        <Route path="/login" element={<ComingSoon />} />
-        <Route path="/register" element={<ComingSoon />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/workspace" element={
+            <ProtectedRoute>
+              <Workspace />
+            </ProtectedRoute>
+          } />
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="/tools/*" element={<ComingSoon />} />
+          <Route path="/guides/*" element={<ComingSoon />} />
+          <Route path="/fix/*" element={<ComingSoon />} />
+          <Route path="/security/*" element={<ComingSoon />} />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
