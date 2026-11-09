@@ -34,30 +34,28 @@ app.get('/api/search', async (c) => {
 
   try {
     const db = getDb()
-    
-    // Standard Prisma syntax for OR and contains (case-insensitive)
-    const software = await db.orm.public.Software.where({
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { category: { contains: query, mode: 'insensitive' } }
-      ]
-    }).limit(10).all()
+    const q = query.toLowerCase()
 
-    const commands = await db.orm.public.Command.where({
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { category: { contains: query, mode: 'insensitive' } }
-      ]
-    }).limit(10).all()
+    // Temporary JS-based search (to be replaced by PostgreSQL Full-Text Search later)
+    const allSoftware = await db.orm.public.Software.all()
+    const software = allSoftware.filter(s => 
+      s.name.toLowerCase().includes(q) || 
+      (s.description && s.description.toLowerCase().includes(q)) || 
+      (s.category && s.category.toLowerCase().includes(q))
+    ).slice(0, 10)
 
-    const categories = await db.orm.public.Category.where({
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } }
-      ]
-    }).limit(5).all()
+    const allCommands = await db.orm.public.Command.all()
+    const commands = allCommands.filter(cmd => 
+      cmd.name.toLowerCase().includes(q) || 
+      (cmd.description && cmd.description.toLowerCase().includes(q)) || 
+      (cmd.category && cmd.category.toLowerCase().includes(q))
+    ).slice(0, 10)
+
+    const allCategories = await db.orm.public.Category.all()
+    const categories = allCategories.filter(cat => 
+      cat.name.toLowerCase().includes(q) || 
+      (cat.description && cat.description.toLowerCase().includes(q))
+    ).slice(0, 5)
 
     return c.json({ software, commands, categories })
   } catch (error) {
