@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import bcrypt from 'bcryptjs'
 import { Temporal } from 'temporal-polyfill'
+import { or } from '@prisma/orm-postgres'
 import { getDb } from './prisma/db.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -34,20 +35,32 @@ app.get('/api/search', async (c) => {
 
   try {
     const db = getDb()
+    const searchPattern = `%${query}%`
     
     // Search Software
     const software = await db.orm.public.Software.where((s) => 
-      s.name.contains(query) || s.description.contains(query) || s.category.contains(query)
+      or(
+        s.name.ilike(searchPattern),
+        s.description.ilike(searchPattern),
+        s.category.ilike(searchPattern)
+      )
     ).limit(10).all()
 
     // Search Commands
     const commands = await db.orm.public.Command.where((cmd) => 
-      cmd.name.contains(query) || cmd.description.contains(query) || cmd.category.contains(query)
+      or(
+        cmd.name.ilike(searchPattern),
+        cmd.description.ilike(searchPattern),
+        cmd.category.ilike(searchPattern)
+      )
     ).limit(10).all()
 
     // Search Categories
     const categories = await db.orm.public.Category.where((cat) => 
-      cat.name.contains(query) || cat.description.contains(query)
+      or(
+        cat.name.ilike(searchPattern),
+        cat.description.ilike(searchPattern)
+      )
     ).limit(5).all()
 
     return c.json({ software, commands, categories })
