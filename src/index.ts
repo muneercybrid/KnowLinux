@@ -12,19 +12,20 @@ app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-app.get('/api/users', async (c) => {
-  const users = await getDb().orm.public.User.include('posts').orderBy((user) => user.createdAt.desc()).all()
-  return c.json(users)
+app.get('/api/categories', async (c) => {
+  try {
+    const categories = await getDb().orm.public.Category.all()
+    return c.json(categories)
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
+    return c.json({ error: 'Failed to fetch categories' }, 500)
+  }
 })
 
-// Calculate absolute path to the public directory
+// Static files
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
-
-// Serve static files
 app.use('/*', serveStatic({ root: publicDir }))
-
-// Fallback to index.html for SPA routing
 app.get('*', serveStatic({ path: path.join(publicDir, 'index.html') }))
 
 const port = Number(process.env.PORT ?? 8080)

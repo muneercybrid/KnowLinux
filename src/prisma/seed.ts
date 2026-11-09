@@ -2,48 +2,71 @@ import { getDb } from './db.js'
 
 const db = getDb()
 
-// upsert() does not run nested relation writes, so each user is created with
-// create(), together with its post, only when no user has that email yet.
-async function createUserOnce(
-  email: string,
-  username: string,
-  name: string,
-  post: { title: string; content: string },
-) {
-  const existing = await db.orm.public.User.where({ email }).first()
-  if (existing) return
-
-  try {
-    await db.orm.public.User.create({
-      email,
-      username,
-      name,
-      posts: (posts) => posts.create([{ ...post, published: true }]),
-    })
-  } catch (error) {
-    // Another seed run created this user after the lookup above.
-    if (isEmailConflict(error)) return
-    throw error
-  }
-}
-
-function isEmailConflict(error: unknown) {
-  const { sqlState, constraint } = (error ?? {}) as {
-    sqlState?: string
-    constraint?: string
-  }
-  return sqlState === '23505' && constraint === 'user_email_key'
-}
-
 async function main() {
-  await createUserOnce('alice@prisma.io', 'alice', 'Alice', {
-    title: 'Hello from Hono on Prisma Compute',
-    content: 'This post was inserted by src/prisma/seed.ts.',
-  })
-  await createUserOnce('marie@prisma.io', 'marie', 'Marie', {
-    title: 'Deploy with Prisma Composer',
-    content: 'Push the connected branch to deploy with Composer.',
-  })
+  console.log('Seeding database...')
+
+  // 1. Seed Categories
+  const categories = [
+    { name: 'Linux Fundamentals', slug: 'linux-fundamentals', description: 'Core concepts, filesystem, and shell basics.', icon: 'Terminal' },
+    { name: 'System Administration', slug: 'system-administration', description: 'Manage users, services, and processes.', icon: 'Server' },
+    { name: 'Package Management', slug: 'package-management', description: 'APT, DNF, Pacman, and software repositories.', icon: 'Box' },
+    { name: 'Networking', slug: 'networking', description: 'Network configuration, DNS, and diagnostics.', icon: 'Network' },
+    { name: 'Development', slug: 'development', description: 'Compilers, version control, and environments.', icon: 'Code' },
+    { name: 'Cybersecurity', slug: 'cybersecurity', description: 'Hardening, defensive security, and testing.', icon: 'Shield' },
+    { name: 'Digital Forensics', slug: 'digital-forensics', description: 'Evidence acquisition and system analysis.', icon: 'Lock' },
+    { name: 'Troubleshooting', slug: 'troubleshooting', description: 'Resolve errors, dependency conflicts, and boot issues.', icon: 'AlertTriangle' },
+    { name: 'Desktop Linux', slug: 'desktop-linux', description: 'GUI, drivers, and desktop environments.', icon: 'Cpu' },
+    { name: 'Storage & Filesystems', slug: 'storage-filesystems', description: 'Partitioning, LVM, and file system management.', icon: 'HardDrive' },
+    { name: 'Databases', slug: 'databases', description: 'PostgreSQL, MySQL, and database administration.', icon: 'Database' },
+    { name: 'Automation', slug: 'automation', description: 'Bash scripting, cron jobs, and Ansible.', icon: 'Wrench' },
+  ]
+
+  for (const cat of categories) {
+    await db.orm.public.Category.create(cat)
+  }
+
+  // 2. Seed Distributions
+  const distros = [
+    { name: 'Kali Linux', slug: 'kali', family: 'Debian', packageManager: 'apt' },
+    { name: 'Ubuntu', slug: 'ubuntu', family: 'Debian', packageManager: 'apt' },
+    { name: 'Debian', slug: 'debian', family: 'Debian', packageManager: 'apt' },
+    { name: 'Arch Linux', slug: 'arch', family: 'Arch', packageManager: 'pacman' },
+    { name: 'Fedora', slug: 'fedora', family: 'RHEL', packageManager: 'dnf' },
+  ]
+
+  for (const distro of distros) {
+    await db.orm.public.Distribution.create(distro)
+  }
+
+  // 3. Seed Software and their Distribution install commands
+  const softwareData = [
+    { name: 'Docker', slug: 'docker', description: 'Containerization platform for building and running applications.', category: 'DevOps', commands: { kali: 'sudo apt install docker.io', ubuntu: 'sudo apt install docker.io', debian: 'sudo apt install docker.io', arch: 'sudo pacman -S docker', fedora: 'sudo dnf install docker' } },
+    { name: 'Visual Studio Code', slug: 'vscode', description: 'Code editor redefined and optimized for building and debugging modern web and cloud applications.', category: 'Development', commands: { kali: 'sudo apt install code', ubuntu: 'sudo snap install code --classic', debian: 'sudo apt install code', arch: 'sudo pacman -S code', fedora: 'sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && sudo dnf install code' } },
+    { name: 'Git', slug: 'git', description: 'Free and open source distributed version control system.', category: 'Development', commands: { kali: 'sudo apt install git', ubuntu: 'sudo apt install git', debian: 'sudo apt install git', arch: 'sudo pacman -S git', fedora: 'sudo dnf install git' } },
+  ]
+
+  for (const soft of softwareData) {
+    const createdSoft = await db.orm.public.Software.create({
+      name: soft.name,
+      slug: soft.slug,
+      description: soft.description,
+      category: soft.category,
+      isVerified: true
+    })
+
+    for (const [distroSlug, command] of Object.entries(soft.commands)) {
+      const distro = await db.orm.public.Distribution.where({ slug: distroSlug }).first()
+      if (distro) {
+        await db.orm.public.SoftwareDistribution.create({
+          softwareId: createdSoft.id,
+          distributionId: distro.id,
+          installCommand: command
+        })
+      }
+    }
+  }
+
+  console.log('Seeding complete.')
 }
 
 main()

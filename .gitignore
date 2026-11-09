@@ -4,3 +4,4 @@ dist
 .prisma
 .prisma-composer
 .alchemy
+.prisma/

@@ -1,0 +1,449 @@
+[
+  {
+    "id": "table.distribution",
+    "label": "Create table \"distribution\"",
+    "summary": "Creates table \"distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"distribution\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"distribution\"",
+        "sql": "CREATE TABLE \"public\".\"distribution\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"family\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"packageManager\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"distribution\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"distribution\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.software",
+    "label": "Create table \"software\"",
+    "summary": "Creates table \"software\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "software"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"software\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"software\"",
+        "sql": "CREATE TABLE \"public\".\"software\" (\n  \"category\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"isVerified\" bool DEFAULT false NOT NULL,\n  \"name\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"software\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.software_distribution",
+    "label": "Create table \"software_distribution\"",
+    "summary": "Creates table \"software_distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "software_distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"software_distribution\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"software_distribution\"",
+        "sql": "CREATE TABLE \"public\".\"software_distribution\" (\n  \"distributionId\" int4 NOT NULL,\n  \"installCommand\" text NOT NULL,\n  \"softwareId\" int4 NOT NULL,\n  PRIMARY KEY (\"softwareId\", \"distributionId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"software_distribution\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.distribution.distribution_name_key",
+    "label": "Add unique constraint on \"distribution\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "distribution_name_key",
+        "table": "distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"distribution_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "distribution_name_key",
+          "public",
+          "\"public\".\"distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"distribution_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"distribution\" ADD CONSTRAINT \"distribution_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"distribution_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "distribution_name_key",
+          "public",
+          "\"public\".\"distribution\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.distribution.distribution_slug_key",
+    "label": "Add unique constraint on \"distribution\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "distribution_slug_key",
+        "table": "distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"distribution_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "distribution_slug_key",
+          "public",
+          "\"public\".\"distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"distribution_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"distribution\" ADD CONSTRAINT \"distribution_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"distribution_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "distribution_slug_key",
+          "public",
+          "\"public\".\"distribution\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.software.software_name_key",
+    "label": "Add unique constraint on \"software\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "software_name_key",
+        "table": "software"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"software_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_name_key",
+          "public",
+          "\"public\".\"software\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"software_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"software\" ADD CONSTRAINT \"software_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"software_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_name_key",
+          "public",
+          "\"public\".\"software\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.software.software_slug_key",
+    "label": "Add unique constraint on \"software\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "software_slug_key",
+        "table": "software"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"software_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_slug_key",
+          "public",
+          "\"public\".\"software\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"software_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"software\" ADD CONSTRAINT \"software_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"software_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_slug_key",
+          "public",
+          "\"public\".\"software\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.software_distribution.software_distribution_distributionId_idx_42af62f2",
+    "label": "Create index \"software_distribution_distributionId_idx_42af62f2\" on \"software_distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "software_distribution_distributionId_idx_42af62f2",
+        "table": "software_distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"software_distribution_distributionId_idx_42af62f2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution_distributionId_idx_42af62f2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"software_distribution_distributionId_idx_42af62f2\"",
+        "sql": "CREATE INDEX \"software_distribution_distributionId_idx_42af62f2\" ON \"public\".\"software_distribution\" (\"distributionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"software_distribution_distributionId_idx_42af62f2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution_distributionId_idx_42af62f2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.software_distribution.software_distribution_softwareId_idx_4d4ec1ee",
+    "label": "Create index \"software_distribution_softwareId_idx_4d4ec1ee\" on \"software_distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "software_distribution_softwareId_idx_4d4ec1ee",
+        "table": "software_distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"software_distribution_softwareId_idx_4d4ec1ee\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution_softwareId_idx_4d4ec1ee\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"software_distribution_softwareId_idx_4d4ec1ee\"",
+        "sql": "CREATE INDEX \"software_distribution_softwareId_idx_4d4ec1ee\" ON \"public\".\"software_distribution\" (\"softwareId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"software_distribution_softwareId_idx_4d4ec1ee\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"software_distribution_softwareId_idx_4d4ec1ee\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.software_distribution.software_distribution_softwareId_fkey",
+    "label": "Add foreign key \"software_distribution_softwareId_fkey\" on \"software_distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "software_distribution_softwareId_fkey",
+        "table": "software_distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"software_distribution_softwareId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_distribution_softwareId_fkey",
+          "public",
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"software_distribution_softwareId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"software_distribution\"\nADD CONSTRAINT \"software_distribution_softwareId_fkey\"\nFOREIGN KEY (\"softwareId\")\nREFERENCES \"public\".\"software\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"software_distribution_softwareId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_distribution_softwareId_fkey",
+          "public",
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.software_distribution.software_distribution_distributionId_fkey",
+    "label": "Add foreign key \"software_distribution_distributionId_fkey\" on \"software_distribution\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "software_distribution_distributionId_fkey",
+        "table": "software_distribution"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"software_distribution_distributionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_distribution_distributionId_fkey",
+          "public",
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"software_distribution_distributionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"software_distribution\"\nADD CONSTRAINT \"software_distribution_distributionId_fkey\"\nFOREIGN KEY (\"distributionId\")\nREFERENCES \"public\".\"distribution\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"software_distribution_distributionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "software_distribution_distributionId_fkey",
+          "public",
+          "\"public\".\"software_distribution\""
+        ]
+      }
+    ]
+  }
+]

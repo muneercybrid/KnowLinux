@@ -8,7 +8,6 @@ model User {
   posts     Post[]
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()
-
   @@map("user")
 }
 
@@ -21,6 +20,65 @@ model Post {
   author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()
-
   @@map("post")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String
+  icon        String
+  tools       Tool[]
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+  @@map("category")
+}
+
+model Tool {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+  @@map("tool")
+}
+
+model Distribution {
+  id             Int                    @id @default(autoincrement())
+  name           String                 @unique
+  slug           String                 @unique
+  family         String
+  packageManager String
+  softwares      SoftwareDistribution[]
+  createdAt      DateTime               @default(now())
+  updatedAt      temporal.updatedAt()
+  @@map("distribution")
+}
+
+model Software {
+  id           Int                    @id @default(autoincrement())
+  name         String                 @unique
+  slug         String                 @unique
+  description  String
+  category     String
+  isVerified   Boolean                @default(false)
+  distributions SoftwareDistribution[]
+  createdAt    DateTime               @default(now())
+  updatedAt    temporal.updatedAt()
+  @@map("software")
+}
+
+model SoftwareDistribution {
+  softwareId     Int
+  distributionId Int
+  installCommand String
+  software       Software     @relation(fields: [softwareId], references: [id], onDelete: Cascade)
+  distribution   Distribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+  
+  @@id([softwareId, distributionId])
+  @@map("software_distribution")
 }
