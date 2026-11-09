@@ -1,0 +1,122 @@
+[
+  {
+    "id": "table.saved_command",
+    "label": "Create table \"saved_command\"",
+    "summary": "Creates table \"saved_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "saved_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"saved_command\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"saved_command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"saved_command\"",
+        "sql": "CREATE TABLE \"public\".\"saved_command\" (\n  \"command\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"saved_command\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"saved_command\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.saved_command.saved_command_userId_idx_a489d58a",
+    "label": "Create index \"saved_command_userId_idx_a489d58a\" on \"saved_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "saved_command_userId_idx_a489d58a",
+        "table": "saved_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"saved_command_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"saved_command_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"saved_command_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"saved_command_userId_idx_a489d58a\" ON \"public\".\"saved_command\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"saved_command_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"saved_command_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.saved_command.saved_command_userId_fkey",
+    "label": "Add foreign key \"saved_command_userId_fkey\" on \"saved_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "saved_command_userId_fkey",
+        "table": "saved_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"saved_command_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "saved_command_userId_fkey",
+          "public",
+          "\"public\".\"saved_command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"saved_command_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"saved_command\"\nADD CONSTRAINT \"saved_command_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"saved_command_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "saved_command_userId_fkey",
+          "public",
+          "\"public\".\"saved_command\""
+        ]
+      }
+    ]
+  }
+]

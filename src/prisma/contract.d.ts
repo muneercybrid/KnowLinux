@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'cfc7c62d231cbd9b537a2cdaf287c70b283346f54aaad7ad194f035fa95b35b1'>;
+  StorageHashBase<'1ee006fb08d43aee0cb19ed34bc4fb33d21620b58dd4580d0d31ed128b576a4e'>;
 export type ExecutionHash =
   ExecutionHashBase<'003104e8569a5447c7a4db4257d008e94d7a86136aeeab0a53c5bb64913c82cc'>;
 export type ProfileHash =
@@ -273,6 +273,13 @@ export type FieldOutputTypes = {
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly SavedCommand: {
+      readonly command: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
+    };
     readonly Session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -354,6 +361,13 @@ export type FieldInputTypes = {
       readonly published: CodecTypes['pg/bool@1']['input'];
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly SavedCommand: {
+      readonly command: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
     };
     readonly Session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -437,6 +451,13 @@ export type StorageColumnTypes = {
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly saved_command: {
+      readonly command: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
+    };
     readonly session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -518,6 +539,13 @@ export type StorageColumnInputTypes = {
       readonly published: CodecTypes['pg/bool@1']['input'];
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly saved_command: {
+      readonly command: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
     };
     readonly session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -608,6 +636,15 @@ export namespace Models {
     author: public_User;
     readonly [RelationKeys]?: 'author';
   };
+  export type public_SavedCommand = {
+    command: CodecTypes['pg/text@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    description: CodecTypes['pg/text@1']['output'];
+    id: CodecTypes['pg/int4@1']['output'];
+    userId: CodecTypes['pg/int4@1']['output'];
+    user: public_User;
+    readonly [RelationKeys]?: 'user';
+  };
   export type public_Session = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -656,8 +693,9 @@ export namespace Models {
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     username: CodecTypes['pg/text@1']['output'] | null;
     posts: public_Post[];
+    savedCommands: public_SavedCommand[];
     sessions: public_Session[];
-    readonly [RelationKeys]?: 'posts' | 'sessions';
+    readonly [RelationKeys]?: 'posts' | 'savedCommands' | 'sessions';
   };
 }
 
@@ -667,6 +705,7 @@ export declare const models: {
     Command: Models.public_Command;
     Distribution: Models.public_Distribution;
     Post: Models.public_Post;
+    SavedCommand: Models.public_SavedCommand;
     Session: Models.public_Session;
     Software: Models.public_Software;
     SoftwareDistribution: Models.public_SoftwareDistribution;
@@ -959,6 +998,69 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'post';
                     readonly columns: readonly ['authorId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'user';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly saved_command: {
+              columns: {
+                readonly command: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly description: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'saved_command_userId_idx_a489d58a';
+                  readonly prefix: 'saved_command_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'saved_command';
+                    readonly columns: readonly ['userId'];
                   };
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
@@ -1307,6 +1409,10 @@ type ContractBase = Omit<
       readonly model: 'Distribution';
     };
     readonly post: { readonly namespace: 'public' & NamespaceId; readonly model: 'Post' };
+    readonly saved_command: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'SavedCommand';
+    };
     readonly session: { readonly namespace: 'public' & NamespaceId; readonly model: 'Session' };
     readonly software: { readonly namespace: 'public' & NamespaceId; readonly model: 'Software' };
     readonly software_distribution: {
@@ -1571,6 +1677,55 @@ type ContractBase = Omit<
                 readonly published: { readonly column: 'published' };
                 readonly title: { readonly column: 'title' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly SavedCommand: {
+            readonly fields: {
+              readonly command: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly description: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'saved_command';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly command: { readonly column: 'command' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly description: { readonly column: 'description' };
+                readonly id: { readonly column: 'id' };
+                readonly userId: { readonly column: 'userId' };
               };
             };
           };
@@ -1850,6 +2005,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['authorId'];
+                };
+              };
+              readonly savedCommands: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'SavedCommand';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
                 };
               };
               readonly sessions: {

@@ -1,16 +1,27 @@
 // use prisma-8
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  username     String?   @unique
-  name         String?
-  passwordHash String?
-  posts        Post[]
-  sessions     Session[]
-  createdAt    DateTime  @default(now())
-  updatedAt    temporal.updatedAt()
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  username      String?        @unique
+  name          String?
+  passwordHash  String?
+  posts         Post[]
+  sessions      Session[]
+  savedCommands SavedCommand[]
+  createdAt     DateTime       @default(now())
+  updatedAt     temporal.updatedAt()
   @@map("user")
+}
+
+model SavedCommand {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  command     String
+  description String
+  createdAt   DateTime @default(now())
+  @@map("saved_command")
 }
 
 model Session {
@@ -71,15 +82,15 @@ model Distribution {
 }
 
 model Software {
-  id           Int                    @id @default(autoincrement())
-  name         String                 @unique
-  slug         String                 @unique
-  description  String
-  category     String
-  isVerified   Boolean                @default(false)
+  id            Int                    @id @default(autoincrement())
+  name          String                 @unique
+  slug          String                 @unique
+  description   String
+  category      String
+  isVerified    Boolean                @default(false)
   distributions SoftwareDistribution[]
-  createdAt    DateTime               @default(now())
-  updatedAt    temporal.updatedAt()
+  createdAt     DateTime               @default(now())
+  updatedAt     temporal.updatedAt()
   @@map("software")
 }
 
