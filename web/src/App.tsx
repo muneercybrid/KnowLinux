@@ -6,6 +6,7 @@ import SoftwarePage from './pages/Software';
 import SoftwareDetail from './pages/SoftwareDetail';
 import CommandsPage from './pages/Commands';
 import CommandDetail from './pages/CommandDetail';
+import CommandGenerator from './pages/CommandGenerator';
 import ComingSoon from './pages/ComingSoon';
 
 function NotFound() {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/software/:slug" element={<SoftwareDetail />} />
         
         <Route path="/commands" element={<CommandsPage />} />
+        <Route path="/commands/generate" element={<CommandGenerator />} />
         <Route path="/commands/:slug" element={<CommandDetail />} />
 
         <Route path="/tools/*" element={<ComingSoon />} />

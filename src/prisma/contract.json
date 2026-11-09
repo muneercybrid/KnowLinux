@@ -182,6 +182,13 @@
                   "kind": "scalar"
                 }
               },
+              "parameters": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "slug": {
                 "nullable": false,
                 "type": {
@@ -224,6 +231,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "parameters": {
+                  "column": "parameters"
                 },
                 "slug": {
                   "column": "slug"
@@ -915,6 +925,15 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "parameters": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "[]"
+                  },
+                  "nullable": false
+                },
                 "slug": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -1428,7 +1447,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f12bcd018bc34f9c7add38ae0d08a0b04f5215972a4acef5f234f71630e1726d"
+    "storageHash": "6f6bdb4cc0a69297df79e8a3898246cf9ddd793fc7129e575b7ea53e23fcdd74"
   },
   "execution": {
     "executionHash": "003104e8569a5447c7a4db4257d008e94d7a86136aeeab0a53c5bb64913c82cc",

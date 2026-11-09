@@ -39,7 +39,7 @@ export default function CommandsPage() {
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <div className="flex items-center justify-between"><div className="flex items-center justify-between"><h1 className="text-3xl font-bold flex items-center gap-3">
               <Terminal className="w-8 h-8 text-brand" /> Command Studio
             </h1>
             <p className="text-[var(--text-muted)] mt-2">Explore Linux commands, understand their syntax, and discover examples.</p>

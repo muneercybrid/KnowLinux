@@ -90,7 +90,8 @@ model Command {
   description String
   syntax      String
   category    String
-  examples    String
+  examples    String   // JSON stringified array of examples
+  parameters  String   @default("[]") // JSON stringified array of parameter definitions
   createdAt   DateTime @default(now())
   updatedAt   temporal.updatedAt()
   @@map("command")

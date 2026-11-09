@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'f12bcd018bc34f9c7add38ae0d08a0b04f5215972a4acef5f234f71630e1726d'>;
+  StorageHashBase<'6f6bdb4cc0a69297df79e8a3898246cf9ddd793fc7129e575b7ea53e23fcdd74'>;
 export type ExecutionHash =
   ExecutionHashBase<'003104e8569a5447c7a4db4257d008e94d7a86136aeeab0a53c5bb64913c82cc'>;
 export type ProfileHash =
@@ -250,6 +250,7 @@ export type FieldOutputTypes = {
       readonly examples: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly parameters: CodecTypes['pg/text@1']['output'];
       readonly slug: CodecTypes['pg/text@1']['output'];
       readonly syntax: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -324,6 +325,7 @@ export type FieldInputTypes = {
       readonly examples: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly parameters: CodecTypes['pg/text@1']['input'];
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly syntax: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -398,6 +400,7 @@ export type StorageColumnTypes = {
       readonly examples: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly parameters: CodecTypes['pg/text@1']['output'];
       readonly slug: CodecTypes['pg/text@1']['output'];
       readonly syntax: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -472,6 +475,7 @@ export type StorageColumnInputTypes = {
       readonly examples: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly parameters: CodecTypes['pg/text@1']['input'];
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly syntax: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -548,6 +552,7 @@ export namespace Models {
     examples: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
+    parameters: CodecTypes['pg/text@1']['output'];
     slug: CodecTypes['pg/text@1']['output'];
     syntax: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -748,6 +753,16 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly parameters: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', '[]'>;
+                  };
                   readonly many: false;
                 };
                 readonly slug: {
@@ -1296,6 +1311,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly parameters: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly slug: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1323,6 +1342,7 @@ type ContractBase = Omit<
                 readonly examples: { readonly column: 'examples' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
+                readonly parameters: { readonly column: 'parameters' };
                 readonly slug: { readonly column: 'slug' };
                 readonly syntax: { readonly column: 'syntax' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
