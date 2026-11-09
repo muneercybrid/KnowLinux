@@ -15,11 +15,12 @@ app.get('/api/users', async (c) => {
   return c.json(users)
 })
 
-// Serve static files from the bundled public directory
-app.use('/*', serveStatic({ root: './dist/public' }))
+// Serve static files. Because the deployment runs from inside 'dist',
+// the 'public' folder is located right next to index.js.
+app.use('/*', serveStatic({ root: './public' }))
 
 // Fallback to index.html for SPA routing
-app.get('*', serveStatic({ path: './dist/public/index.html' }))
+app.get('*', serveStatic({ path: './public/index.html' }))
 
 const port = Number(process.env.PORT ?? 8080)
 serve({ fetch: app.fetch, port }, (info) => {
