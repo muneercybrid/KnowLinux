@@ -22,7 +22,7 @@ async function main() {
 
   for (const cat of categories) {
     await db.orm.public.Category.upsert({
-      where: { slug: cat.slug },
+      conflictOn: { slug: cat.slug },
       update: {},
       create: cat,
     })
@@ -38,7 +38,7 @@ async function main() {
 
   for (const distro of distros) {
     await db.orm.public.Distribution.upsert({
-      where: { slug: distro.slug },
+      conflictOn: { slug: distro.slug },
       update: {},
       create: distro,
     })
@@ -52,7 +52,7 @@ async function main() {
 
   for (const soft of softwareData) {
     const createdSoft = await db.orm.public.Software.upsert({
-      where: { slug: soft.slug },
+      conflictOn: { slug: soft.slug },
       update: {},
       create: {
         name: soft.name,
@@ -67,11 +67,9 @@ async function main() {
       const distro = await db.orm.public.Distribution.where({ slug: distroSlug }).first()
       if (distro) {
         await db.orm.public.SoftwareDistribution.upsert({
-          where: {
-            softwareId_distributionId: {
-              softwareId: createdSoft.id,
-              distributionId: distro.id
-            }
+          conflictOn: {
+            softwareId: createdSoft.id,
+            distributionId: distro.id
           },
           update: { installCommand: command },
           create: {
