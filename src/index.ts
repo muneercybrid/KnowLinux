@@ -4,7 +4,6 @@ import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import bcrypt from 'bcryptjs'
 import { Temporal } from 'temporal-polyfill'
-import { or } from '@prisma/orm-postgres'
 import { getDb } from './prisma/db.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -35,33 +34,30 @@ app.get('/api/search', async (c) => {
 
   try {
     const db = getDb()
-    const searchPattern = `%${query}%`
     
-    // Search Software
-    const software = await db.orm.public.Software.where((s) => 
-      or(
-        s.name.ilike(searchPattern),
-        s.description.ilike(searchPattern),
-        s.category.ilike(searchPattern)
-      )
-    ).limit(10).all()
+    // Standard Prisma syntax for OR and contains (case-insensitive)
+    const software = await db.orm.public.Software.where({
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } }
+      ]
+    }).limit(10).all()
 
-    // Search Commands
-    const commands = await db.orm.public.Command.where((cmd) => 
-      or(
-        cmd.name.ilike(searchPattern),
-        cmd.description.ilike(searchPattern),
-        cmd.category.ilike(searchPattern)
-      )
-    ).limit(10).all()
+    const commands = await db.orm.public.Command.where({
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } }
+      ]
+    }).limit(10).all()
 
-    // Search Categories
-    const categories = await db.orm.public.Category.where((cat) => 
-      or(
-        cat.name.ilike(searchPattern),
-        cat.description.ilike(searchPattern)
-      )
-    ).limit(5).all()
+    const categories = await db.orm.public.Category.where({
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } }
+      ]
+    }).limit(5).all()
 
     return c.json({ software, commands, categories })
   } catch (error) {
