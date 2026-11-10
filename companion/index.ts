@@ -150,14 +150,39 @@ async function pollCommands() {
             console.log('⏳ Executing...')
             const timestamp = new Date().toISOString()
             try {
-              const proc = Bun.spawn(['bash', '-c', cmd.command], { stdout: 'pipe', stderr: 'pipe' })
+              const isRoot = process.getuid?.() === 0
+              let proc
+              
+              if (cmd.requiresSudo && !isRoot && cmd.sudoPassword) {
+                // Use sudo -S, password piped via stdin
+                console.log('🔑 Running with sudo (password provided)...')
+                proc = Bun.spawn(['bash', '-c', `sudo -S -p '' ${cmd.command.replace(/^sudo\s+/, '')}`], {
+                  stdout: 'pipe',
+                  stderr: 'pipe',
+                  stdin: 'pipe'
+                })
+                proc.stdin.write(cmd.sudoPassword + '\n')
+                proc.stdin.end()
+              } else if (cmd.requiresSudo && isRoot) {
+                // Already root, strip sudo prefix
+                console.log('🔑 Running as root (no sudo needed)...')
+                proc = Bun.spawn(['bash', '-c', cmd.command.replace(/^sudo\s+/, '')], {
+                  stdout: 'pipe', stderr: 'pipe'
+                })
+              } else {
+                // Regular command
+                proc = Bun.spawn(['bash', '-c', cmd.command], {
+                  stdout: 'pipe', stderr: 'pipe'
+                })
+              }
+              
               const stdout = await new Response(proc.stdout).text()
               const stderr = await new Response(proc.stderr).text()
               const exitCode = await proc.exited
               const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
               console.log(`✅ Exit code: ${exitCode}`)
               console.log(fullOutput)
-              try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | EXIT: ${exitCode}\n`) } catch(e) {}
+              try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | SUDO: ${cmd.requiresSudo ? 'yes' : 'no'} | EXIT: ${exitCode}\n`) } catch(e) {}
               await fetch(`${API_URL}/commands/${cmd.id}/result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

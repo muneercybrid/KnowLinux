@@ -45,37 +45,24 @@ companionApp.post('/authorize', async (c) => {
   return c.json({ success: true })
 })
 
-export default companionApp
-
 companionApp.post('/sync', async (c) => {
   const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Missing token' }, 401)
-  }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
   const token = authHeader.replace('Bearer ', '')
-
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ token }).first()
   if (!device) return c.json({ error: 'Invalid token' }, 401)
-
   const body = await c.req.json()
   const { distro, kernel, hostname, arch, packages } = body
-
-  // Update device with system info
   await db.orm.public.CompanionDevice.where({ id: device.id }).update({
     osInfo: JSON.stringify({ distro, kernel, hostname, arch }),
     lastSeenAt: Temporal.Now.instant()
   })
-
-  // Clear old packages and insert new
   if (Array.isArray(packages) && packages.length > 0) {
-    // Delete existing packages for this device
     const existing = await db.orm.public.CompanionPackage.where({ deviceId: device.id }).all()
     for (const pkg of existing) {
       await db.orm.public.CompanionPackage.where({ id: pkg.id }).delete()
     }
-
-    // Insert new packages in batches (Prisma 8 doesn't support createMany)
     const batchSize = 100
     for (let i = 0; i < packages.length; i += batchSize) {
       const batch = packages.slice(i, i + batchSize)
@@ -89,43 +76,28 @@ companionApp.post('/sync', async (c) => {
           })
         )
       )
-      console.log(`Inserted batch ${Math.floor(i / batchSize) + 1} (${Math.min(i + batchSize, packages.length)}/${packages.length})`)
     }
   }
-
-  return c.json({
-    success: true,
-    deviceId: device.id,
-    packagesCount: packages?.length || 0
-  })
+  return c.json({ success: true, deviceId: device.id, packagesCount: packages?.length || 0 })
 })
 
 companionApp.get('/devices', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-
   const db = getDb()
   const devices = await db.orm.public.CompanionDevice.where({ userId: user.id }).all()
-
   return c.json(devices.map((d: any) => ({
-    id: d.id,
-    name: d.name,
-    osInfo: d.osInfo,
-    lastSeenAt: d.lastSeenAt,
-    createdAt: d.createdAt
+    id: d.id, name: d.name, osInfo: d.osInfo, lastSeenAt: d.lastSeenAt, createdAt: d.createdAt
   })))
 })
 
 companionApp.delete('/devices/:id', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-
   const deviceId = parseInt(c.req.param('id'))
   const db = getDb()
-  
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
-
   await db.orm.public.CompanionDevice.where({ id: deviceId }).delete()
   return c.json({ success: true })
 })
@@ -133,83 +105,106 @@ companionApp.delete('/devices/:id', async (c) => {
 companionApp.get('/devices/:id/packages', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-
   const deviceId = parseInt(c.req.param('id'))
   const db = getDb()
-
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
-
   const packages = await db.orm.public.CompanionPackage.where({ deviceId }).all()
   return c.json(packages)
 })
 
-// User queues a command from web UI
 companionApp.post('/devices/:id/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-
   const deviceId = parseInt(c.req.param('id'))
-  const { command } = await c.req.json()
+  const { command, requiresSudo } = await c.req.json()
   if (!command) return c.json({ error: 'Command is required' }, 400)
-
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
-
   const cmd = await db.orm.public.CompanionCommand.create({
     deviceId,
-    command
+    command,
+    requiresSudo: requiresSudo === true,
+    status: requiresSudo ? 'awaiting_password' : 'pending'
   })
   return c.json(cmd)
 })
 
-// User views command history
+companionApp.post('/commands/:id/password', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const cmdId = parseInt(c.req.param('id'))
+  const { password } = await c.req.json()
+  if (!password) return c.json({ error: 'Password required' }, 400)
+  const db = getDb()
+  const cmd = await db.orm.public.CompanionCommand.where({ id: cmdId }).include('device').first()
+  if (!cmd) return c.json({ error: 'Command not found' }, 404)
+  if (cmd.device.userId !== user.id) return c.json({ error: 'Forbidden' }, 403)
+  const expiresAt = Temporal.Now.instant().add({ seconds: 60 })
+  await db.orm.public.CompanionCommand.where({ id: cmdId }).update({
+    sudoPassword: password,
+    passwordExpiresAt: expiresAt,
+    status: 'pending'
+  })
+  return c.json({ success: true })
+})
+
 companionApp.get('/devices/:id/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-
   const deviceId = parseInt(c.req.param('id'))
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
-
   const commands = await db.orm.public.CompanionCommand.where({ deviceId }).all()
   return c.json(commands)
 })
 
-// Agent polls for pending commands (uses device token)
 companionApp.get('/pending-commands', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
   const token = authHeader.replace('Bearer ', '')
-
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ token }).first()
   if (!device) return c.json({ error: 'Invalid token' }, 401)
-
+  const now = Temporal.Now.instant()
   const pending = await db.orm.public.CompanionCommand.where({ deviceId: device.id, status: 'pending' }).all()
-  return c.json(pending)
+  const valid = []
+  for (const cmd of pending) {
+    if (cmd.sudoPassword && cmd.passwordExpiresAt) {
+      if (Temporal.Instant.compare(now, cmd.passwordExpiresAt) > 0) {
+        await db.orm.public.CompanionCommand.where({ id: cmd.id }).update({
+          status: 'awaiting_password',
+          sudoPassword: null,
+          passwordExpiresAt: null
+        })
+        continue
+      }
+    }
+    valid.push(cmd)
+  }
+  return c.json(valid)
 })
 
-// Agent reports execution result
 companionApp.post('/commands/:id/result', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
   const token = authHeader.replace('Bearer ', '')
-
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ token }).first()
   if (!device) return c.json({ error: 'Invalid token' }, 401)
-
   const cmdId = parseInt(c.req.param('id'))
   const { output, exitCode } = await c.req.json()
-
   await db.orm.public.CompanionCommand.where({ id: cmdId, deviceId: device.id }).update({
     status: 'completed',
     output,
     exitCode,
+    sudoPassword: null,
+    passwordExpiresAt: null,
     executedAt: Temporal.Now.instant()
   })
   return c.json({ success: true })
 })
+
+export default companionApp

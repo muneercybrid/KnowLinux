@@ -1,0 +1,128 @@
+[
+  {
+    "id": "column.public.companion_command.passwordExpiresAt",
+    "label": "Add column \"passwordExpiresAt\" to \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordExpiresAt",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordExpiresAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "passwordExpiresAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"passwordExpiresAt\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\" ADD COLUMN \"passwordExpiresAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordExpiresAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "passwordExpiresAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_command.requiresSudo",
+    "label": "Add column \"requiresSudo\" to \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "requiresSudo",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"requiresSudo\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "requiresSudo"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"requiresSudo\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\" ADD COLUMN \"requiresSudo\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"requiresSudo\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "requiresSudo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_command.sudoPassword",
+    "label": "Add column \"sudoPassword\" to \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "sudoPassword",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sudoPassword\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "sudoPassword"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"sudoPassword\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\" ADD COLUMN \"sudoPassword\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sudoPassword\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "sudoPassword"
+        ]
+      }
+    ]
+  }
+]

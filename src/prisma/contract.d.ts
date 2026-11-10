@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'9ed9156a61c59e5a311b9de479a620525b8080579ad6452149c01258af15f048'>;
+  StorageHashBase<'d4417926ea48bbb56d1916213d3dce7bbfc775777000760f2fd7a594cb6a27e8'>;
 export type ExecutionHash =
   ExecutionHashBase<'edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6'>;
 export type ProfileHash =
@@ -266,7 +266,10 @@ export type FieldOutputTypes = {
       readonly exitCode: CodecTypes['pg/int4@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly output: CodecTypes['pg/text@1']['output'] | null;
+      readonly passwordExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly requiresSudo: CodecTypes['pg/bool@1']['output'];
       readonly status: CodecTypes['pg/text@1']['output'];
+      readonly sudoPassword: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly CompanionDevice: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -418,7 +421,10 @@ export type FieldInputTypes = {
       readonly exitCode: CodecTypes['pg/int4@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly output: CodecTypes['pg/text@1']['input'] | null;
+      readonly passwordExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly requiresSudo: CodecTypes['pg/bool@1']['input'];
       readonly status: CodecTypes['pg/text@1']['input'];
+      readonly sudoPassword: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly CompanionDevice: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -570,7 +576,10 @@ export type StorageColumnTypes = {
       readonly exitCode: CodecTypes['pg/int4@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly output: CodecTypes['pg/text@1']['output'] | null;
+      readonly passwordExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly requiresSudo: CodecTypes['pg/bool@1']['output'];
       readonly status: CodecTypes['pg/text@1']['output'];
+      readonly sudoPassword: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly companion_device: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -722,7 +731,10 @@ export type StorageColumnInputTypes = {
       readonly exitCode: CodecTypes['pg/int4@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly output: CodecTypes['pg/text@1']['input'] | null;
+      readonly passwordExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly requiresSudo: CodecTypes['pg/bool@1']['input'];
       readonly status: CodecTypes['pg/text@1']['input'];
+      readonly sudoPassword: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly companion_device: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -879,7 +891,10 @@ export namespace Models {
     exitCode: CodecTypes['pg/int4@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
     output: CodecTypes['pg/text@1']['output'] | null;
+    passwordExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    requiresSudo: CodecTypes['pg/bool@1']['output'];
     status: CodecTypes['pg/text@1']['output'];
+    sudoPassword: CodecTypes['pg/text@1']['output'] | null;
     device: public_CompanionDevice;
     readonly [RelationKeys]?: 'device';
   };
@@ -1298,6 +1313,22 @@ type ContractBase = Omit<
                   readonly nullable: true;
                   readonly many: false;
                 };
+                readonly passwordExpiresAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly requiresSudo: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
                 readonly status: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -1306,6 +1337,12 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/text@1', 'pending'>;
                   };
+                  readonly many: false;
+                };
+                readonly sudoPassword: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
               };
@@ -2493,8 +2530,23 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly passwordExpiresAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly requiresSudo: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly status: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly sudoPassword: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
             };
@@ -2523,7 +2575,10 @@ type ContractBase = Omit<
                 readonly exitCode: { readonly column: 'exitCode' };
                 readonly id: { readonly column: 'id' };
                 readonly output: { readonly column: 'output' };
+                readonly passwordExpiresAt: { readonly column: 'passwordExpiresAt' };
+                readonly requiresSudo: { readonly column: 'requiresSudo' };
                 readonly status: { readonly column: 'status' };
+                readonly sudoPassword: { readonly column: 'sudoPassword' };
               };
             };
           };

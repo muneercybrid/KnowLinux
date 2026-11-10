@@ -393,8 +393,29 @@
                   "kind": "scalar"
                 }
               },
+              "passwordExpiresAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "requiresSudo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "status": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "sudoPassword": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -442,8 +463,17 @@
                 "output": {
                   "column": "output"
                 },
+                "passwordExpiresAt": {
+                  "column": "passwordExpiresAt"
+                },
+                "requiresSudo": {
+                  "column": "requiresSudo"
+                },
                 "status": {
                   "column": "status"
+                },
+                "sudoPassword": {
+                  "column": "sudoPassword"
                 }
               },
               "namespaceId": "public",
@@ -2016,6 +2046,20 @@
                   "dataType": "pg/text",
                   "nullable": true
                 },
+                "passwordExpiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true
+                },
+                "requiresSudo": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
                 "status": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -2024,6 +2068,11 @@
                     "value": "pending"
                   },
                   "nullable": false
+                },
+                "sudoPassword": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -3120,7 +3169,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9ed9156a61c59e5a311b9de479a620525b8080579ad6452149c01258af15f048"
+    "storageHash": "d4417926ea48bbb56d1916213d3dce7bbfc775777000760f2fd7a594cb6a27e8"
   },
   "execution": {
     "executionHash": "edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6",
