@@ -1,5 +1,5 @@
-import * as readline from 'node:readline'
 #!/usr/bin/env bun
+import * as readline from "node:readline"
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -114,8 +114,17 @@ async function pollCommands() {
     console.error('❌ Not connected. Run "knowlinux connect" first.')
     return
   }
-  const { token } = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  const { token } = config
+  const autoExecute = config.autoExecute === true
+  const auditLog = path.join(CONFIG_DIR, 'audit.log')
+
   console.log('👂 Listening for commands from KnowLinux (polling every 1s)...')
+  if (autoExecute) {
+    console.log('⚠️  AUTO-EXECUTE ENABLED — commands run without confirmation')
+  } else {
+    console.log('🔒 CONFIRM MODE — you will be prompted before each command')
+  }
   console.log('Press Ctrl+C to stop.\n')
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -125,30 +134,30 @@ async function pollCommands() {
       const res = await fetch(`${API_URL}/pending-commands`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      
       if (res.ok) {
         const commands: any[] = await res.json()
-        
         for (const cmd of commands) {
           console.log(`\n\n🔔 COMMAND RECEIVED: ${cmd.command}`)
           console.log('─'.repeat(50))
-          
-          const answer = await new Promise<string>((resolve) => {
-            rl.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
-          })
-
-          if (answer === 'y') {
+          let shouldExecute = autoExecute
+          if (!autoExecute) {
+            const answer = await new Promise<string>((resolve) => {
+              rl.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
+            })
+            shouldExecute = answer === 'y'
+          }
+          if (shouldExecute) {
             console.log('⏳ Executing...')
+            const timestamp = new Date().toISOString()
             try {
               const proc = Bun.spawn(['bash', '-c', cmd.command], { stdout: 'pipe', stderr: 'pipe' })
               const stdout = await new Response(proc.stdout).text()
               const stderr = await new Response(proc.stderr).text()
               const exitCode = await proc.exited
-              
               const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
               console.log(`✅ Exit code: ${exitCode}`)
               console.log(fullOutput)
-
+              try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | EXIT: ${exitCode}\n`) } catch(e) {}
               await fetch(`${API_URL}/commands/${cmd.id}/result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -159,24 +168,40 @@ async function pollCommands() {
               await fetch(`${API_URL}/commands/${cmd.id}/result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ output: 'Execution failed: ' + execErr.message, exitCode: -1 })
+                body: JSON.stringify({ output: 'Failed: ' + execErr.message, exitCode: -1 })
               })
             }
           } else {
-            console.log('❌ Command rejected.')
+            console.log('❌ Rejected.')
             await fetch(`${API_URL}/commands/${cmd.id}/result`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ output: 'Command rejected by user.', exitCode: -1 })
+              body: JSON.stringify({ output: 'Rejected by user.', exitCode: -1 })
             })
           }
         }
       }
-    } catch (e) {
-      // Silent error, retry in 1s
-    }
-    
-    await new Promise(r => setTimeout(r, 1000)) // 1 second polling
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 1000))
+  }
+}
+
+function toggleAuto() {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.error('❌ Not connected.')
+    return
+  }
+  const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  config.autoExecute = !config.autoExecute
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2))
+  if (config.autoExecute) {
+    console.log('⚠️  AUTO-EXECUTE IS NOW ON')
+    console.log('   Commands from the web UI will execute WITHOUT confirmation.')
+    console.log('   Anyone with access to your KnowLinux account can run commands here.')
+    console.log('   Run "toggle-auto" again to disable.')
+  } else {
+    console.log('🔒 AUTO-EXECUTE IS NOW OFF')
+    console.log('   You will be prompted before each command.')
   }
 }
 
@@ -187,6 +212,8 @@ if (command === 'connect') {
   scanSystem()
 } else if (command === 'daemon') {
   pollCommands()
+} else if (command === 'toggle-auto') {
+  toggleAuto()
 } else {
   console.log(`
 KnowLinux Companion Agent v1.1
@@ -195,5 +222,6 @@ Usage:
   knowlinux connect   - Authenticate this machine
   knowlinux scan      - Scan installed packages
   knowlinux daemon    - Listen for remote commands
+  knowlinux toggle-auto - Enable/disable auto-execute
   `)
 }
