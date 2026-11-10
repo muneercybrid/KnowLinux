@@ -27,11 +27,9 @@ export default function WorkstationDetail() {
     fetch('/api/companion/devices')
       .then(r => r.json())
       .then((devices: any[]) => setDevice(devices.find(d => d.id === parseInt(id || '0'))))
-
     fetch(`/api/companion/devices/${id}/packages`)
       .then(r => r.json())
       .then(d => { setPackages(Array.isArray(d) ? d : []); setLoading(false) })
-
     refreshCommands()
     const interval = setInterval(refreshCommands, 5000)
     return () => clearInterval(interval)
@@ -77,7 +75,6 @@ export default function WorkstationDetail() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Commands Panel */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Terminal className="w-5 h-5 text-brand" />
@@ -85,26 +82,14 @@ export default function WorkstationDetail() {
             </div>
             <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
               <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={newCommand}
-                  onChange={e => setNewCommand(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
-                  placeholder="e.g., uname -a"
-                  className="flex-1 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-                <button
-                  onClick={handleSendCommand}
-                  disabled={sending || !newCommand.trim()}
-                  className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
-                >
+                <input type="text" value={newCommand} onChange={e => setNewCommand(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendCommand()} placeholder="e.g., uname -a" className="flex-1 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+                <button onClick={handleSendCommand} disabled={sending || !newCommand.trim()} className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2">
                   {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)] mb-4">
-                ⚠️ The agent will ask for confirmation before executing. Start it with: <code className="text-brand">knowlinux-agent daemon</code>
+                The agent will ask for confirmation. Start it with: <code className="text-brand">knowlinux-agent daemon</code>
               </p>
-
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {commands.length === 0 ? (
                   <p className="text-center py-4 text-sm text-[var(--text-muted)]">No commands yet.</p>
@@ -112,22 +97,15 @@ export default function WorkstationDetail() {
                   <div key={cmd.id} className="p-3 rounded-lg bg-[var(--bg-main)] border border-[var(--border-color)] text-sm">
                     <div className="flex justify-between mb-2">
                       <code className="text-brand font-mono">$ {cmd.command}</code>
-                      <span className={`text-xs px-2 py-0.5 rounded ${
-                        cmd.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
-                        cmd.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
-                        'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
-                      }`}>{cmd.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded ${cmd.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>{cmd.status}</span>
                     </div>
-                    {cmd.output && (
-                      <pre className="text-xs bg-[#0d1117] p-2 rounded overflow-x-auto max-h-40 text-emerald-400">{cmd.output}</pre>
-                    )}
+                    {cmd.output && <pre className="text-xs bg-[#0d1117] p-2 rounded overflow-x-auto max-h-40 text-emerald-400">{cmd.output}</pre>}
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Packages Panel */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-5 h-5 text-brand" />
@@ -136,13 +114,7 @@ export default function WorkstationDetail() {
             </div>
             <div className="mb-4 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)]" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search packages..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              />
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search packages..." className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
             </div>
             {loading ? (
               <p className="text-center py-8 text-[var(--text-muted)]">Loading...</p>

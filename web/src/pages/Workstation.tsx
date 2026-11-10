@@ -4,12 +4,7 @@ import { Footer } from '../components/Footer'
 import { Link } from 'react-router-dom'
 import { Monitor, Cpu, Terminal, ArrowRight } from 'lucide-react'
 
-interface Device {
-  id: number
-  name: string
-  osInfo: string
-  lastSeenAt: string
-}
+interface Device { id: number; name: string; osInfo: string; lastSeenAt: string }
 
 export default function Workstation() {
   const [devices, setDevices] = useState<Device[]>([])
@@ -31,7 +26,7 @@ export default function Workstation() {
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Monitor className="w-8 h-8 text-brand" /> My Workstations
             </h1>
-            <p className="text-[var(--text-muted)] mt-2">Manage your Linux machines and their installed tools.</p>
+            <p className="text-[var(--text-muted)] mt-2">Manage your Linux machines and installed tools.</p>
           </div>
           <Link to="/activate" className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm">
             Connect New Machine
@@ -44,7 +39,7 @@ export default function Workstation() {
           <div className="text-center py-16 border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
             <Terminal className="w-16 h-16 text-[var(--text-faint)] mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">No machines connected</h2>
-            <p className="text-[var(--text-muted)] mb-6">Install the Companion agent on your Linux machine and run:</p>
+            <p className="text-[var(--text-muted)] mb-6">Install the Companion agent and run:</p>
             <code className="bg-[#0d1117] border border-[#30363d] text-emerald-400 px-4 py-2 rounded text-sm">knowlinux-agent connect</code>
           </div>
         ) : (
@@ -53,11 +48,7 @@ export default function Workstation() {
               let os: any = {}
               try { os = JSON.parse(d.osInfo || '{}') } catch (e) {}
               return (
-                <Link 
-                  key={d.id} 
-                  to={`/workstation/${d.id}`}
-                  className="block p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group"
-                >
+                <Link key={d.id} to={`/workstation/${d.id}`} className="block p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
