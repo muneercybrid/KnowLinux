@@ -99,25 +99,44 @@ SUP_END
 fi
 echo ""
 
-# Ensure PATH includes ~/.local/bin
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-  echo "Note: Add this to your ~/.bashrc or ~/.zshrc:"
-  echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
-  echo ""
-fi
+# Auto-add PATH to shell rc files
+PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+for RC in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+  if [ -f "$RC" ] && ! grep -qF "$PATH_LINE" "$RC"; then
+    echo "" >> "$RC"
+    echo "# KnowLinux Companion" >> "$RC"
+    echo "$PATH_LINE" >> "$RC"
+    echo "Added PATH to $RC"
+  fi
+done
 
+# Apply PATH for this session
+export PATH="$HOME/.local/bin:$PATH"
+
+echo ""
 echo "Installation complete."
 echo ""
-echo "Next step - connect this machine to KnowLinux:"
-echo ""
-echo "  knowlinux-agent connect"
-echo ""
-echo "This will show a 6-digit code. Go to:"
-echo "  https://knowlinux.tech/activate"
-echo "and paste the code to authorize this machine."
-echo ""
-echo "After connecting, enable auto-execute for headless operation:"
-echo "  knowlinux-agent toggle-auto"
+
+# Ask if user wants to connect now
+echo "Connect this machine to KnowLinux now? [y/N]"
+read -t 30 CONNECT_NOW || CONNECT_NOW="n"
+
+if [ "$CONNECT_NOW" = "y" ] || [ "$CONNECT_NOW" = "Y" ]; then
+  echo ""
+  "$HOME/.local/bin/knowlinux-agent" connect
+  echo ""
+  echo "Now enable auto-execute for headless operation:"
+  echo "  knowlinux-agent toggle-auto"
+else
+  echo ""
+  echo "To connect later, run:"
+  echo "  source ~/.bashrc  # or ~/.zshrc"
+  echo "  knowlinux-agent connect"
+  echo ""
+  echo "Then enable auto-execute:"
+  echo "  knowlinux-agent toggle-auto"
+fi
+
 echo ""
 echo "View service logs:"
 if [ "$USE_SYSTEMD" = true ]; then
