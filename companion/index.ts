@@ -214,11 +214,17 @@ async function pollCommands() {
               saveStatus()
               console.log(fullOutput)
               try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | SUDO: ${cmd.requiresSudo ? 'yes' : 'no'} | EXIT: ${exitCode}\n`) } catch(e) {}
-              await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+              const resultRes = await fetch(`${API_URL}/commands/${cmd.id}/result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ output: fullOutput, exitCode })
               })
+              if (!resultRes.ok) {
+                const errBody = await resultRes.text()
+                console.error(`❌ Failed to post result: ${resultRes.status} - ${errBody}`)
+              } else {
+                console.log(`📤 Result uploaded to server`)
+              }
             } catch (execErr: any) {
               console.error('❌ Execution failed:', execErr.message)
               await fetch(`${API_URL}/commands/${cmd.id}/result`, {
