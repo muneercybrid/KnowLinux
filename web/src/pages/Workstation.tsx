@@ -9,14 +9,12 @@ interface Device { id: number; name: string; osInfo: string; lastSeenAt: string 
 export default function Workstation() {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     fetch('/api/companion/devices')
       .then(r => r.json())
       .then(d => { setDevices(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
-
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navbar />
