@@ -10,6 +10,7 @@ import { fetchAllPackages } from './services/connectors.js'
 import { liveSearchRepology, debugRepology } from './services/live-search.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import companionApp from './routes/companion.js'
 
 const app = new Hono()
 

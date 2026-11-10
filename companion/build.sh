@@ -1,2 +1,3 @@
 #!/bin/bash
-bun build ./companion/index.ts --compile --outfile knowlinux-agent
+cd "$(dirname "$0")/.."
+bun build ./companion/index.ts --compile --outfile ./companion/knowlinux-agent

@@ -15,7 +15,6 @@ export default function Activate() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return navigate('/login')
-    
     setStatus('loading')
     try {
       const res = await fetch('/api/companion/authorize', {
@@ -39,10 +38,7 @@ export default function Activate() {
         <div className="w-full max-w-md p-8 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] text-center">
           <Terminal className="w-12 h-12 text-brand mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Connect your Linux machine</h1>
-          <p className="text-sm text-[var(--text-muted)] mb-8">
-            Enter the 6-digit code shown in your terminal.
-          </p>
-
+          <p className="text-sm text-[var(--text-muted)] mb-8">Enter the 6-digit code shown in your terminal.</p>
           {status === 'success' ? (
             <div className="text-emerald-500 bg-emerald-500/10 p-6 rounded-lg border border-emerald-500/20">
               <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
@@ -54,16 +50,16 @@ export default function Activate() {
               {status === 'error' && (
                 <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">{errorMsg}</div>
               )}
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 placeholder="A1B2C3"
                 maxLength={6}
                 className="w-full text-center tracking-[1em] font-mono text-2xl px-4 py-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] focus:outline-none focus:ring-2 focus:ring-brand uppercase"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={code.length < 6 || status === 'loading'}
                 className="w-full bg-brand hover:bg-brand-hover text-dark-bg py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
               >
@@ -71,6 +67,12 @@ export default function Activate() {
               </button>
             </form>
           )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
+}
         </div>
       </main>
       <Footer />

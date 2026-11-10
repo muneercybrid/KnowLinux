@@ -19,6 +19,7 @@ import ToolDetail from './pages/ToolDetail';
 import LiveToolDetail from './pages/LiveToolDetail';
 import ToolsPage from './pages/Tools';
 import ComingSoon from './pages/ComingSoon';
+import Activate from './pages/Activate';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/tools/live/:name" element={<LiveToolDetail />} />
           <Route path="/tools/:slug" element={<ToolDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/activate" element={<Activate />} />
           <Route path="/register" element={<Register />} />
           <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
