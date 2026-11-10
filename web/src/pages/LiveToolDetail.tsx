@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { ArrowLeft, Box, Terminal, Copy, Check, BookOpen, Download, Wrench, Shield, Play, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Box, Terminal, Copy, Check, BookOpen, Download, Wrench, Shield, CheckCircle2 } from 'lucide-react';
 
 export default function LiveToolDetail() {
   const { name } = useParams();
@@ -47,9 +47,6 @@ export default function LiveToolDetail() {
   const displayDistros = initialDistro === 'all' 
     ? Object.keys(groupedByDistro) 
     : [initialDistro].filter(d => groupedByDistro[d]);
-
-  // Determine the primary package to use for the guide
-  const primaryPkg = displayDistros.length > 0 ? Object.values(groupedByDistro[displayDistros[0]])[0] as any : null;
 
   const getInstallCmd = (distro: string, pkgName: string) => {
     if (['arch', 'aur', 'manjaro'].includes(distro)) return `sudo pacman -S ${pkgName}`;
@@ -151,7 +148,7 @@ export default function LiveToolDetail() {
               </div>
             </div>
 
-            {/* Technical Details (moved from install view) */}
+            {/* Technical Details */}
             <div className="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
                <h2 className="text-lg font-bold mb-4">Available Versions</h2>
                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
