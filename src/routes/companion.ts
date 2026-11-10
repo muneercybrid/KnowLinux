@@ -151,6 +151,7 @@ companionApp.post('/commands/:id/password', async (c) => {
 })
 
 companionApp.get('/devices/:id/commands', async (c) => {
+  try {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const deviceId = parseInt(c.req.param('id'))
@@ -158,9 +159,31 @@ companionApp.get('/devices/:id/commands', async (c) => {
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
   const commands = await db.orm.public.CompanionCommand.where({ deviceId }).all()
-  // Newest first
-  commands.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  return c.json(commands)
+  
+  // Sanitize: never leak sudoPassword, convert Temporal to string safely
+  const safe = commands.map((cmd: any) => ({
+    id: cmd.id,
+    command: cmd.command,
+    status: cmd.status,
+    output: cmd.output,
+    exitCode: cmd.exitCode,
+    requiresSudo: cmd.requiresSudo ?? false,
+    createdAt: cmd.createdAt ? String(cmd.createdAt) : null,
+    executedAt: cmd.executedAt ? String(cmd.executedAt) : null,
+  }))
+  
+  // Sort newest first, safely (no Temporal parsing)
+  safe.sort((a, b) => {
+    const at = a.createdAt ? new Date(a.createdAt).getTime() || 0 : 0
+    const bt = b.createdAt ? new Date(b.createdAt).getTime() || 0 : 0
+    return bt - at
+  })
+  
+  return c.json(safe)
+  } catch (err: any) {
+    console.error('[Commands API Error]', err)
+    return c.json({ error: err.message || 'Internal error', stack: err.stack }, 500)
+  }
 })
 
 companionApp.get('/pending-commands', async (c) => {
