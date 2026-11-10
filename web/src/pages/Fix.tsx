@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Search, Terminal, Stethoscope, ShieldCheck, Copy, Check } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { AlertTriangle, Search, Stethoscope, ShieldCheck, Copy, Check } from 'lucide-react';
 
 interface AIResponse {
   diagnostics: string[];
@@ -19,7 +18,7 @@ export default function FixPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   
-  const { user } = useAuth();
+
   const navigate = useNavigate();
 
   const handleCopy = (cmd: string) => {
