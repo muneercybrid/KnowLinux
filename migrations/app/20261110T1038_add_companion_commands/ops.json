@@ -1,0 +1,122 @@
+[
+  {
+    "id": "table.companion_command",
+    "label": "Create table \"companion_command\"",
+    "summary": "Creates table \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"companion_command\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"companion_command\"",
+        "sql": "CREATE TABLE \"public\".\"companion_command\" (\n  \"command\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"deviceId\" int4 NOT NULL,\n  \"executedAt\" timestamptz,\n  \"exitCode\" int4,\n  \"id\" SERIAL NOT NULL,\n  \"output\" text,\n  \"status\" text DEFAULT 'pending' NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"companion_command\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_command\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.companion_command.companion_command_deviceId_idx_a7d461e8",
+    "label": "Create index \"companion_command_deviceId_idx_a7d461e8\" on \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "companion_command_deviceId_idx_a7d461e8",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"companion_command_deviceId_idx_a7d461e8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_command_deviceId_idx_a7d461e8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"companion_command_deviceId_idx_a7d461e8\"",
+        "sql": "CREATE INDEX \"companion_command_deviceId_idx_a7d461e8\" ON \"public\".\"companion_command\" (\"deviceId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"companion_command_deviceId_idx_a7d461e8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_command_deviceId_idx_a7d461e8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.companion_command.companion_command_deviceId_fkey",
+    "label": "Add foreign key \"companion_command_deviceId_fkey\" on \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "companion_command_deviceId_fkey",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"companion_command_deviceId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_command_deviceId_fkey",
+          "public",
+          "\"public\".\"companion_command\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"companion_command_deviceId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\"\nADD CONSTRAINT \"companion_command_deviceId_fkey\"\nFOREIGN KEY (\"deviceId\")\nREFERENCES \"public\".\"companion_device\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"companion_command_deviceId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_command_deviceId_fkey",
+          "public",
+          "\"public\".\"companion_command\""
+        ]
+      }
+    ]
+  }
+]

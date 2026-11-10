@@ -84,6 +84,9 @@ export function Navbar() {
                   <Link to="/workspace" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
                     <LayoutDashboard className="w-4 h-4" /> Workspace
                   </Link>
+                  <Link to="/workstation" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
+                    <Monitor className="w-4 h-4" /> Workstation
+                  </Link>
                   <Link to="/account" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--bg-elevated)] hover:text-brand transition-colors">
                     <Settings className="w-4 h-4" /> Account Settings
                   </Link>

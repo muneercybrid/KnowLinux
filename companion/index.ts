@@ -54,22 +54,27 @@ async function scanSystem() {
   let packages: { name: string; version: string; description: string }[] = []
 
   try {
-    const proc = Bun.spawn(['dpkg-query', '-W', '-f', '${Package}|${Version}|${Description}\n'], {
+    const proc = Bun.spawn(['dpkg-query', '-W', '-f', '${Package}|${Version}|${binary:Summary}\n'], {
       stdout: 'pipe',
     })
     const output = await new Response(proc.stdout).text()
     
+    // Robust parser: only accept lines that look like "pkgname|version|summary"
     packages = output.split('\n')
       .filter(line => line.trim())
       .map(line => {
-        const [name, version, description] = line.split('|')
+        const parts = line.split('|')
+        if (parts.length < 3) return null
+        const [name, version, description] = parts
+        // Validate package name format
+        if (!/^[a-z0-9][a-z0-9.+-]*$/i.test(name.trim())) return null
         return {
-          name: name || '',
-          version: version || '',
-          description: (description || '').split('\n')[0]
+          name: name.trim(),
+          version: version.trim(),
+          description: description.trim()
         }
       })
-      .filter(p => p.name)
+      .filter((p): p is { name: string; version: string; description: string } => p !== null)
 
     console.log(`   Found ${packages.length} installed packages`)
   } catch (e) {
@@ -101,17 +106,81 @@ async function scanSystem() {
   }
 }
 
+
+
+async function pollCommands() {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.error('❌ Not connected. Run "knowlinux connect" first.')
+    return
+  }
+  const { token } = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  console.log('👂 Listening for commands from KnowLinux... (Ctrl+C to stop)')
+
+  while (true) {
+    try {
+      const res = await fetch(`${API_URL}/pending-commands`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const commands: any[] = await res.json()
+        for (const cmd of commands) {
+          console.log(`\n🔔 Command received: ${cmd.command}`)
+          console.log('⚠️  Review carefully. Type "y" to execute, anything else to skip:')
+          const answer = prompt('> ') || ''
+          if (answer.toLowerCase() === 'y') {
+            console.log('⏳ Executing...')
+            const proc = Bun.spawn(['bash', '-c', cmd.command], {
+              stdout: 'pipe', stderr: 'pipe'
+            })
+            const stdout = await new Response(proc.stdout).text()
+            const stderr = await new Response(proc.stderr).text()
+            const exitCode = await proc.exited
+            
+            const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
+            console.log(`✅ Exit code: ${exitCode}`)
+            console.log(fullOutput)
+
+            await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ output: fullOutput, exitCode })
+            })
+          } else {
+            await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ output: 'Command rejected by user.', exitCode: -1 })
+            })
+          }
+        }
+      }
+    } catch (e) {
+      // Silent error, retry in 5s
+    }
+    await new Promise(r => setTimeout(r, 5000))
+  }
+}
+
 const command = process.argv[2]
 if (command === 'connect') {
   authenticate()
 } else if (command === 'scan') {
   scanSystem()
+} else if (command === 'daemon') {
+  pollCommands()
 } else {
   console.log(`
-KnowLinux Companion Agent v1.0
+KnowLinux Companion Agent v1.1
 
 Usage:
-  knowlinux connect   - Authenticate this machine with knowlinux.tech
-  knowlinux scan      - Scan local system and sync with KnowLinux
+  knowlinux connect   - Authenticate this machine
+  knowlinux scan      - Scan installed packages
+  knowlinux daemon    - Listen for remote commands
   `)
 }

@@ -143,3 +143,73 @@ companionApp.get('/devices/:id/packages', async (c) => {
   const packages = await db.orm.public.CompanionPackage.where({ deviceId }).all()
   return c.json(packages)
 })
+
+// User queues a command from web UI
+companionApp.post('/devices/:id/commands', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const deviceId = parseInt(c.req.param('id'))
+  const { command } = await c.req.json()
+  if (!command) return c.json({ error: 'Command is required' }, 400)
+
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+
+  const cmd = await db.orm.public.CompanionCommand.create({
+    deviceId,
+    command
+  })
+  return c.json(cmd)
+})
+
+// User views command history
+companionApp.get('/devices/:id/commands', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+
+  const commands = await db.orm.public.CompanionCommand.where({ deviceId }).all()
+  return c.json(commands)
+})
+
+// Agent polls for pending commands (uses device token)
+companionApp.get('/pending-commands', async (c) => {
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
+  const token = authHeader.replace('Bearer ', '')
+
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ token }).first()
+  if (!device) return c.json({ error: 'Invalid token' }, 401)
+
+  const pending = await db.orm.public.CompanionCommand.where({ deviceId: device.id, status: 'pending' }).all()
+  return c.json(pending)
+})
+
+// Agent reports execution result
+companionApp.post('/commands/:id/result', async (c) => {
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
+  const token = authHeader.replace('Bearer ', '')
+
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ token }).first()
+  if (!device) return c.json({ error: 'Invalid token' }, 401)
+
+  const cmdId = parseInt(c.req.param('id'))
+  const { output, exitCode } = await c.req.json()
+
+  await db.orm.public.CompanionCommand.where({ id: cmdId, deviceId: device.id }).update({
+    status: 'completed',
+    output,
+    exitCode,
+    executedAt: Temporal.Now.instant()
+  })
+  return c.json({ success: true })
+})
