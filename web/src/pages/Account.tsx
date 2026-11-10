@@ -1,13 +1,44 @@
-import { Navbar } from '../components/Navbar';
-import { Footer } from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react'
+import { Navbar } from '../components/Navbar'
+import { Footer } from '../components/Footer'
+import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
+import { ArrowLeft, User, Mail, Shield, Monitor, Trash2, Cpu, Terminal } from 'lucide-react'
+
+interface Device {
+  id: number
+  name: string
+  osInfo: string
+  lastSeenAt: string
+  createdAt: string
+}
 
 export default function Account() {
-  const { user } = useAuth();
+  const { user } = useAuth()
+  const [devices, setDevices] = useState<Device[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!user) return null; // Protected route handles this, but just in case
+  const fetchDevices = () => {
+    fetch('/api/companion/devices')
+      .then(res => res.json())
+      .then(data => {
+        setDevices(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (user) fetchDevices()
+  }, [user])
+
+  const handleDisconnect = async (id: number) => {
+    if (!confirm('Are you sure you want to disconnect this device? The Companion agent will stop working.')) return
+    await fetch(`/api/companion/devices/${id}`, { method: 'DELETE' })
+    fetchDevices()
+  }
+
+  if (!user) return null
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
@@ -57,10 +88,73 @@ export default function Account() {
             </div>
           </div>
 
+          {/* Connected Devices */}
+          <div className="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Monitor className="w-6 h-6 text-brand" />
+                <h2 className="text-xl font-bold">Connected Machines</h2>
+              </div>
+              <Link to="/activate" className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
+                Connect New
+              </Link>
+            </div>
+
+            {loading ? (
+              <p className="text-center py-8 text-[var(--text-muted)]">Loading devices...</p>
+            ) : devices.length === 0 ? (
+              <div className="text-center py-8 border border-dashed border-[var(--border-color)] rounded-lg">
+                <Terminal className="w-10 h-10 text-[var(--text-faint)] mx-auto mb-3" />
+                <p className="text-[var(--text-muted)] mb-3">No machines connected yet.</p>
+                <p className="text-xs text-[var(--text-faint)] mb-4">Install the Companion agent on your Linux machine and run:</p>
+                <code className="text-xs bg-[#0d1117] px-3 py-1 rounded border border-[#30363d] text-emerald-400">knowlinux-agent connect</code>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {devices.map((device) => {
+                  let osInfo: any = {}
+                  try { osInfo = JSON.parse(device.osInfo || '{}') } catch (e) {}
+                  
+                  return (
+                    <div key={device.id} className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Cpu className="w-4 h-4 text-brand" />
+                          <span className="font-bold">{osInfo.hostname || device.name}</span>
+                        </div>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {osInfo.distro || 'Unknown OS'} · {osInfo.arch || ''} · Kernel {osInfo.kernel || ''}
+                        </p>
+                        <p className="text-xs text-[var(--text-faint)] mt-1">
+                          Last scan: {new Date(device.lastSeenAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Link 
+                          to={`/account/devices/${device.id}`}
+                          className="text-xs bg-[var(--bg-elevated)] hover:border-brand border border-[var(--border-color)] px-3 py-2 rounded-lg transition-colors"
+                        >
+                          View Tools
+                        </Link>
+                        <button 
+                          onClick={() => handleDisconnect(device.id)}
+                          className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                          title="Disconnect"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Danger Zone */}
           <div className="p-6 rounded-xl border border-red-500/30 bg-red-500/5">
             <h3 className="text-lg font-bold text-red-500 mb-2">Danger Zone</h3>
-            <p className="text-sm text-[var(--text-muted)] mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">Once you delete your account, there is no going back.</p>
             <button className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
               Delete Account
             </button>
@@ -69,5 +163,5 @@ export default function Account() {
       </main>
       <Footer />
     </div>
-  );
+  )
 }

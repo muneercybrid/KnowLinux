@@ -75,14 +75,21 @@ companionApp.post('/sync', async (c) => {
       await db.orm.public.CompanionPackage.where({ id: pkg.id }).delete()
     }
 
-    // Insert new packages (batch)
-    for (const pkg of packages.slice(0, 500)) {
-      await db.orm.public.CompanionPackage.create({
-        deviceId: device.id,
-        name: pkg.name,
-        version: pkg.version || null,
-        description: pkg.description || null
-      })
+    // Insert new packages in batches (Prisma 8 doesn't support createMany)
+    const batchSize = 100
+    for (let i = 0; i < packages.length; i += batchSize) {
+      const batch = packages.slice(i, i + batchSize)
+      await Promise.all(
+        batch.map((pkg: any) =>
+          db.orm.public.CompanionPackage.create({
+            deviceId: device.id,
+            name: pkg.name,
+            version: pkg.version || null,
+            description: pkg.description || null
+          })
+        )
+      )
+      console.log(`Inserted batch ${Math.floor(i / batchSize) + 1} (${Math.min(i + batchSize, packages.length)}/${packages.length})`)
     }
   }
 
@@ -121,4 +128,18 @@ companionApp.delete('/devices/:id', async (c) => {
 
   await db.orm.public.CompanionDevice.where({ id: deviceId }).delete()
   return c.json({ success: true })
+})
+
+companionApp.get('/devices/:id/packages', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+
+  const packages = await db.orm.public.CompanionPackage.where({ deviceId }).all()
+  return c.json(packages)
 })

@@ -20,6 +20,7 @@ import LiveToolDetail from './pages/LiveToolDetail';
 import ToolsPage from './pages/Tools';
 import ComingSoon from './pages/ComingSoon';
 import Activate from './pages/Activate';
+import DeviceDetail from './pages/DeviceDetail';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+          <Route path="/account/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
           <Route path="/guides/*" element={<ComingSoon />} />
           <Route path="/security/*" element={<ComingSoon />} />
           <Route path="*" element={<NotFound />} />
