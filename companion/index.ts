@@ -7,6 +7,7 @@ import path from 'path'
 const API_URL = 'https://knowlinux.tech/api/companion'
 const CONFIG_DIR = path.join(os.homedir(), '.knowlinux')
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json')
+const STATUS_FILE = path.join(CONFIG_DIR, 'status.json')
 
 async function authenticate() {
   console.log('🔗 Connecting to KnowLinux...')
@@ -129,6 +130,20 @@ async function pollCommands() {
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 
+  const startedAt = Date.now()
+  let commandsExecuted = 0
+  const saveStatus = () => {
+    try {
+      fs.writeFileSync(STATUS_FILE, JSON.stringify({
+        startedAt,
+        lastPollAt: new Date().toISOString(),
+        commandsExecuted,
+        autoExecute,
+        pid: process.pid
+      }, null, 2))
+    } catch (e) {}
+  }
+
   while (true) {
     try {
       const res = await fetch(`${API_URL}/pending-commands`, {
@@ -181,6 +196,8 @@ async function pollCommands() {
               const exitCode = await proc.exited
               const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
               console.log(`✅ Exit code: ${exitCode}`)
+              commandsExecuted++
+              saveStatus()
               console.log(fullOutput)
               try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | SUDO: ${cmd.requiresSudo ? 'yes' : 'no'} | EXIT: ${exitCode}\n`) } catch(e) {}
               await fetch(`${API_URL}/commands/${cmd.id}/result`, {
@@ -207,6 +224,7 @@ async function pollCommands() {
         }
       }
     } catch (e) {}
+    saveStatus()
     await new Promise(r => setTimeout(r, 1000))
   }
 }
@@ -230,6 +248,63 @@ function toggleAuto() {
   }
 }
 
+function showStatus() {
+  const GREEN = '\x1b[32m'
+  const YELLOW = '\x1b[33m'
+  const RED = '\x1b[31m'
+  const CYAN = '\x1b[36m'
+  const DIM = '\x1b[2m'
+  const BOLD = '\x1b[1m'
+  const RESET = '\x1b[0m'
+
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.log(`${RED}✗ Not connected. Run "knowlinux connect" first.${RESET}`)
+    return
+  }
+
+  const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  let status: any = {}
+  try { status = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8')) } catch (e) {}
+
+  const connected = !!config.token
+  const autoExecute = config.autoExecute === true
+  const daemonRunning = !!status.pid
+  const uptime = status.startedAt ? Math.floor((Date.now() - status.startedAt) / 1000) : 0
+  const uptimeStr = uptime > 0
+    ? `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${uptime % 60}s`
+    : '—'
+  const lastPoll = status.lastPollAt
+    ? Math.floor((Date.now() - new Date(status.lastPollAt).getTime()) / 1000) + 's ago'
+    : '—'
+  const daemonProcessExists = status.pid ? (() => { try { process.kill(status.pid, 0); return true } catch (e) { return false } })() : false
+
+  const line = '─'.repeat(53)
+  console.log('')
+  console.log(`${CYAN}┌${line}┐${RESET}`)
+  console.log(`${CYAN}│${RESET}  ${BOLD}🤖 KnowLinux Companion${RESET}                          ${CYAN}│${RESET}`)
+  console.log(`${CYAN}├${line}┤${RESET}`)
+
+  const row = (label: string, value: string) => {
+    const padded = (label + ' ' + value).padEnd(51)
+    console.log(`${CYAN}│${RESET}  ${padded}${CYAN}│${RESET}`)
+  }
+
+  row('Status:     ', connected ? `${GREEN}🟢 Connected${RESET}` : `${RED}🔴 Not connected${RESET}`)
+  row('Daemon:     ', daemonProcessExists ? `${GREEN}🟢 Running (PID ${status.pid})${RESET}` : `${DIM}🔵 Not running${RESET}`)
+  row('Mode:       ', autoExecute ? `${YELLOW}⚠️  Auto-execute ON${RESET}` : `${GREEN}🔒 Confirm mode${RESET}`)
+  row('Uptime:     ', uptimeStr)
+  row('Last poll:  ', lastPoll)
+  row('Executed:   ', `${status.commandsExecuted || 0} commands`)
+  console.log(`${CYAN}├${line}┤${RESET}`)
+  console.log(`${CYAN}│${RESET}  ${BOLD}Quick Commands${RESET}                             ${CYAN}│${RESET}`)
+  row('  Start:    ', `knowlinux-agent daemon`)
+  row('  Toggle:   ', `knowlinux-agent toggle-auto`)
+  row('  Stop:     ', `systemctl --user stop knowlinux-agent`)
+  console.log(`${CYAN}└${line}┘${RESET}`)
+  console.log('')
+}
+
+
 const command = process.argv[2]
 if (command === 'connect') {
   authenticate()
@@ -239,6 +314,8 @@ if (command === 'connect') {
   pollCommands()
 } else if (command === 'toggle-auto') {
   toggleAuto()
+} else if (command === 'status') {
+  showStatus()
 } else {
   console.log(`
 KnowLinux Companion Agent v1.1
@@ -248,5 +325,6 @@ Usage:
   knowlinux scan      - Scan installed packages
   knowlinux daemon    - Listen for remote commands
   knowlinux toggle-auto - Enable/disable auto-execute
+  knowlinux status    - Show agent status
   `)
 }

@@ -158,6 +158,8 @@ companionApp.get('/devices/:id/commands', async (c) => {
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
   const commands = await db.orm.public.CompanionCommand.where({ deviceId }).all()
+  // Newest first
+  commands.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   return c.json(commands)
 })
 
