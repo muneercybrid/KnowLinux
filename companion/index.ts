@@ -128,7 +128,16 @@ async function pollCommands() {
   }
   console.log('Press Ctrl+C to stop.\n')
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  // Only create readline if we're in a real TTY and NOT in auto-execute
+  let rl: readline.Interface | null = null
+  const hasTTY = process.stdin.isTTY === true
+  if (!autoExecute && hasTTY) {
+    try {
+      rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+    } catch (e) {
+      console.warn('⚠️  Could not attach to terminal. Running in non-interactive mode.')
+    }
+  }
 
   const startedAt = Date.now()
   let commandsExecuted = 0
@@ -156,10 +165,15 @@ async function pollCommands() {
           console.log('─'.repeat(50))
           let shouldExecute = autoExecute
           if (!autoExecute) {
-            const answer = await new Promise<string>((resolve) => {
-              rl.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
-            })
-            shouldExecute = answer === 'y'
+            if (rl) {
+              const answer = await new Promise<string>((resolve) => {
+                rl!.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
+              })
+              shouldExecute = answer === 'y'
+            } else {
+              console.log('⚠️  No terminal attached. Rejecting command (enable auto-execute for headless mode).')
+              shouldExecute = false
+            }
           }
           if (shouldExecute) {
             console.log('⏳ Executing...')
