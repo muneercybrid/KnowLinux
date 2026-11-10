@@ -6,9 +6,28 @@ import crypto from 'crypto'
 
 const googleApp = new Hono()
 
-const REDIRECT_URI = process.env.NODE_ENV === 'production'
-  ? 'https://knowlinux.tech/api/auth/google/callback'
-  : 'http://localhost:8080/api/auth/google/callback'
+function getRedirectUri(c: any): string {
+  // Priority 1: explicit env var (most reliable in production)
+  if (process.env.GOOGLE_REDIRECT_URI) return process.env.GOOGLE_REDIRECT_URI
+  
+  // Priority 2: X-Forwarded-* headers (set by Prisma Compute and most proxies)
+  const forwardedProto = c.req.header('x-forwarded-proto')
+  const forwardedHost = c.req.header('x-forwarded-host')
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}/api/auth/google/callback`
+  }
+  
+  // Priority 3: detect from request URL
+  try {
+    const url = new URL(c.req.url)
+    return `${url.protocol}//${url.host}/api/auth/google/callback`
+  } catch (e) {
+    // Priority 4: fallback based on NODE_ENV
+    return process.env.NODE_ENV === 'production'
+      ? 'https://knowlinux.tech/api/auth/google/callback'
+      : 'http://localhost:8080/api/auth/google/callback'
+  }
+}
 
 googleApp.get('/google', async (c) => {
   const clientId = process.env.GOOGLE_CLIENT_ID
@@ -25,7 +44,7 @@ googleApp.get('/google', async (c) => {
 
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: getRedirectUri(c),
     response_type: 'code',
     scope: 'openid email profile',
     state,
@@ -55,7 +74,7 @@ googleApp.get('/google/callback', async (c) => {
         code,
         client_id: clientId!,
         client_secret: clientSecret!,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: getRedirectUri(c),
         grant_type: 'authorization_code'
       })
     })
