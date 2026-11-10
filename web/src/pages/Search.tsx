@@ -120,7 +120,7 @@ export default function Search() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredLiveResults.map((pkg: any, i: number) => (
-                    <Link to={`/tools/live/${pkg.name}?repo=${pkg.repo}`} key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group block">
+                    <Link to={`/tools/live/${pkg.name}`} key={i} className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group block">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold text-brand truncate group-hover:underline">{pkg.name}</h3>
                         <span className="text-xs font-mono bg-[var(--bg-elevated)] px-2 py-1 rounded capitalize shrink-0 ml-2">{pkg.distro}</span>
