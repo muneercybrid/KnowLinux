@@ -1,4 +1,4 @@
-import { Terminal, Menu, X, Settings, LogOut, LayoutDashboard, Search } from 'lucide-react';
+import { Terminal, Menu, X, Settings, LogOut, LayoutDashboard, Search, Monitor , Monitor } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';

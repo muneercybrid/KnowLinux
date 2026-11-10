@@ -26,20 +26,18 @@ export default function Workstation() {
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Monitor className="w-8 h-8 text-brand" /> My Workstations
             </h1>
-            <p className="text-[var(--text-muted)] mt-2">Manage your Linux machines and installed tools.</p>
+            <p className="text-[var(--text-muted)] mt-2">Manage your Linux machines.</p>
           </div>
           <Link to="/activate" className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm">
-            Connect New Machine
+            Connect New
           </Link>
         </div>
-
         {loading ? (
           <p className="text-center py-12 text-[var(--text-muted)]">Loading...</p>
         ) : devices.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
             <Terminal className="w-16 h-16 text-[var(--text-faint)] mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">No machines connected</h2>
-            <p className="text-[var(--text-muted)] mb-6">Install the Companion agent and run:</p>
             <code className="bg-[#0d1117] border border-[#30363d] text-emerald-400 px-4 py-2 rounded text-sm">knowlinux-agent connect</code>
           </div>
         ) : (
@@ -56,9 +54,8 @@ export default function Workstation() {
                         <span className="text-lg font-bold">{os.hostname || d.name}</span>
                       </div>
                       <p className="text-sm text-[var(--text-muted)]">{os.distro} · {os.arch}</p>
-                      <p className="text-xs text-[var(--text-faint)] mt-1">Last scan: {new Date(d.lastSeenAt).toLocaleString()}</p>
                     </div>
-                    <ArrowRight className="w-6 h-6 text-[var(--text-faint)] group-hover:text-brand transition-colors" />
+                    <ArrowRight className="w-6 h-6 text-[var(--text-faint)] group-hover:text-brand" />
                   </div>
                 </Link>
               )
