@@ -73,9 +73,3 @@ export default function Activate() {
     </div>
   )
 }
-        </div>
-      </main>
-      <Footer />
-    </div>
-  )
-}
