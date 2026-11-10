@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'802db623c0bfd68c3fc0e49699ba94ef55c87ae40ee87e2a0fdc0a9ceee4c9a9'>;
+  StorageHashBase<'9ee610ec3d1409648aea7eace8672c063b4be907dc2ee6dd441310298b79294d'>;
 export type ExecutionHash =
   ExecutionHashBase<'edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6'>;
 export type ProfileHash =
@@ -258,6 +258,22 @@ export type FieldOutputTypes = {
       readonly syntax: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly CompanionDevice: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly lastSeenAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly token: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
+    };
+    readonly DeviceAuthCode: {
+      readonly code: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly deviceCode: CodecTypes['pg/text@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'] | null;
+    };
     readonly Distribution: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly family: CodecTypes['pg/text@1']['output'];
@@ -374,6 +390,22 @@ export type FieldInputTypes = {
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly syntax: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly CompanionDevice: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly lastSeenAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly token: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly DeviceAuthCode: {
+      readonly code: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly deviceCode: CodecTypes['pg/text@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'] | null;
     };
     readonly Distribution: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -492,6 +524,22 @@ export type StorageColumnTypes = {
       readonly syntax: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly companion_device: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly lastSeenAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly token: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
+    };
+    readonly device_auth_code: {
+      readonly code: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly deviceCode: CodecTypes['pg/text@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'] | null;
+    };
     readonly distribution: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly family: CodecTypes['pg/text@1']['output'];
@@ -608,6 +656,22 @@ export type StorageColumnInputTypes = {
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly syntax: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly companion_device: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly lastSeenAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly token: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly device_auth_code: {
+      readonly code: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly deviceCode: CodecTypes['pg/text@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'] | null;
     };
     readonly distribution: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -731,6 +795,25 @@ export namespace Models {
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     readonly [RelationKeys]?: never;
   };
+  export type public_CompanionDevice = {
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    id: CodecTypes['pg/int4@1']['output'];
+    lastSeenAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    name: CodecTypes['pg/text@1']['output'];
+    token: CodecTypes['pg/text@1']['output'];
+    userId: CodecTypes['pg/int4@1']['output'];
+    user: public_User;
+    readonly [RelationKeys]?: 'user';
+  };
+  export type public_DeviceAuthCode = {
+    code: CodecTypes['pg/text@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    deviceCode: CodecTypes['pg/text@1']['output'];
+    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    status: CodecTypes['pg/text@1']['output'];
+    userId: CodecTypes['pg/int4@1']['output'] | null;
+    readonly [RelationKeys]?: never;
+  };
   export type public_Distribution = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     family: CodecTypes['pg/text@1']['output'];
@@ -838,10 +921,11 @@ export namespace Models {
     passwordHash: CodecTypes['pg/text@1']['output'] | null;
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     username: CodecTypes['pg/text@1']['output'] | null;
+    companionDevices: public_CompanionDevice[];
     posts: public_Post[];
     savedCommands: public_SavedCommand[];
     sessions: public_Session[];
-    readonly [RelationKeys]?: 'posts' | 'savedCommands' | 'sessions';
+    readonly [RelationKeys]?: 'companionDevices' | 'posts' | 'savedCommands' | 'sessions';
   };
 }
 
@@ -849,6 +933,8 @@ export declare const models: {
   public: {
     Category: Models.public_Category;
     Command: Models.public_Command;
+    CompanionDevice: Models.public_CompanionDevice;
+    DeviceAuthCode: Models.public_DeviceAuthCode;
     Distribution: Models.public_Distribution;
     Package: Models.public_Package;
     Post: Models.public_Post;
@@ -1057,6 +1143,129 @@ type ContractBase = Omit<
                 { readonly columns: readonly ['name'] },
                 { readonly columns: readonly ['slug'] },
               ];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
+            readonly companion_device: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly lastSeenAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'Linux Machine'>;
+                  };
+                  readonly many: false;
+                };
+                readonly token: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['token'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'companion_device_userId_idx_a489d58a';
+                  readonly prefix: 'companion_device_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companion_device';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'user';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly device_auth_code: {
+              columns: {
+                readonly code: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly deviceCode: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly expiresAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly status: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'pending'>;
+                  };
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['code'] };
+              uniques: readonly [{ readonly columns: readonly ['deviceCode'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -1772,6 +1981,14 @@ type ContractBase = Omit<
   readonly roots: {
     readonly category: { readonly namespace: 'public' & NamespaceId; readonly model: 'Category' };
     readonly command: { readonly namespace: 'public' & NamespaceId; readonly model: 'Command' };
+    readonly companion_device: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'CompanionDevice';
+    };
+    readonly device_auth_code: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'DeviceAuthCode';
+    };
     readonly distribution: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Distribution';
@@ -1962,6 +2179,110 @@ type ContractBase = Omit<
                 readonly slug: { readonly column: 'slug' };
                 readonly syntax: { readonly column: 'syntax' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly CompanionDevice: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly lastSeenAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly token: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'companion_device';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly lastSeenAt: { readonly column: 'lastSeenAt' };
+                readonly name: { readonly column: 'name' };
+                readonly token: { readonly column: 'token' };
+                readonly userId: { readonly column: 'userId' };
+              };
+            };
+          };
+          readonly DeviceAuthCode: {
+            readonly fields: {
+              readonly code: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly deviceCode: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly expiresAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly userId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'device_auth_code';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly code: { readonly column: 'code' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly deviceCode: { readonly column: 'deviceCode' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
+                readonly status: { readonly column: 'status' };
+                readonly userId: { readonly column: 'userId' };
               };
             };
           };
@@ -2570,6 +2891,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly companionDevices: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'CompanionDevice';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
+                };
+              };
               readonly posts: {
                 readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Post' };
                 readonly cardinality: '1:N';

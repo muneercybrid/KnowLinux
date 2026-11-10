@@ -9,6 +9,7 @@ model User {
   posts         Post[]
   sessions      Session[]
   savedCommands SavedCommand[]
+  companionDevices CompanionDevice[]
   createdAt     DateTime       @default(now())
   updatedAt     temporal.updatedAt()
   @@map("user")
@@ -154,4 +155,25 @@ model TroubleshootingCase {
   createdAt      DateTime @default(now())
   updatedAt      temporal.updatedAt()
   @@map("troubleshooting_case")
+}
+
+model CompanionDevice {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   @default("Linux Machine")
+  token       String   @unique
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  @@map("companion_device")
+}
+
+model DeviceAuthCode {
+  code        String   @id
+  deviceCode  String   @unique
+  status      String   @default("pending") // pending, authorized, expired
+  userId      Int?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  @@map("device_auth_code")
 }

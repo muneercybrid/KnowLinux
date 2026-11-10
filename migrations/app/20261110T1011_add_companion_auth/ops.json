@@ -1,0 +1,245 @@
+[
+  {
+    "id": "table.companion_device",
+    "label": "Create table \"companion_device\"",
+    "summary": "Creates table \"companion_device\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companion_device"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"companion_device\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"companion_device\"",
+        "sql": "CREATE TABLE \"public\".\"companion_device\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lastSeenAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"name\" text DEFAULT 'Linux Machine' NOT NULL,\n  \"token\" text NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"companion_device\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.device_auth_code",
+    "label": "Create table \"device_auth_code\"",
+    "summary": "Creates table \"device_auth_code\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "device_auth_code"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"device_auth_code\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"device_auth_code\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"device_auth_code\"",
+        "sql": "CREATE TABLE \"public\".\"device_auth_code\" (\n  \"code\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"deviceCode\" text NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"status\" text DEFAULT 'pending' NOT NULL,\n  \"userId\" int4,\n  PRIMARY KEY (\"code\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"device_auth_code\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"device_auth_code\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.companion_device.companion_device_token_key",
+    "label": "Add unique constraint on \"companion_device\" (token)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "companion_device_token_key",
+        "table": "companion_device"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"companion_device_token_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_device_token_key",
+          "public",
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"companion_device_token_key\"",
+        "sql": "ALTER TABLE \"public\".\"companion_device\" ADD CONSTRAINT \"companion_device_token_key\" UNIQUE (\"token\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"companion_device_token_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_device_token_key",
+          "public",
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.device_auth_code.device_auth_code_deviceCode_key",
+    "label": "Add unique constraint on \"device_auth_code\" (deviceCode)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "device_auth_code_deviceCode_key",
+        "table": "device_auth_code"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"device_auth_code_deviceCode_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "device_auth_code_deviceCode_key",
+          "public",
+          "\"public\".\"device_auth_code\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"device_auth_code_deviceCode_key\"",
+        "sql": "ALTER TABLE \"public\".\"device_auth_code\" ADD CONSTRAINT \"device_auth_code_deviceCode_key\" UNIQUE (\"deviceCode\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"device_auth_code_deviceCode_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "device_auth_code_deviceCode_key",
+          "public",
+          "\"public\".\"device_auth_code\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.companion_device.companion_device_userId_idx_a489d58a",
+    "label": "Create index \"companion_device_userId_idx_a489d58a\" on \"companion_device\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "companion_device_userId_idx_a489d58a",
+        "table": "companion_device"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"companion_device_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_device_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"companion_device_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"companion_device_userId_idx_a489d58a\" ON \"public\".\"companion_device\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"companion_device_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_device_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.companion_device.companion_device_userId_fkey",
+    "label": "Add foreign key \"companion_device_userId_fkey\" on \"companion_device\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "companion_device_userId_fkey",
+        "table": "companion_device"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"companion_device_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_device_userId_fkey",
+          "public",
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"companion_device_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"companion_device\"\nADD CONSTRAINT \"companion_device_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"companion_device_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_device_userId_fkey",
+          "public",
+          "\"public\".\"companion_device\""
+        ]
+      }
+    ]
+  }
+]

@@ -8,7 +8,7 @@ async function main() {
   const tools = await db.orm.public.Tool.all()
   
   for (const tool of tools) {
-    if (tool.aiDescription && tool.aiDescription.length > 50) {
+    if (tool.aiDescription && tool.aiDescription.length > 800) {
       console.log(`Skipping ${tool.name} (already enriched)`)
       continue
     }

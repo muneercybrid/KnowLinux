@@ -407,6 +407,8 @@ app.post('/api/fix/ai', async (c) => {
   }
 })
 
+app.route('/api/companion', companionApp)
+
 // --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
