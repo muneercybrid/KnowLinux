@@ -1,66 +1,68 @@
 #!/bin/bash
 set -e
 
-echo "Installing KnowLinux Companion..."
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+DIM='\033[2m'
+NC='\033[0m'
+
+echo -e "${BLUE}KnowLinux Companion Installer${NC}"
 echo ""
 
-# Detect OS and architecture
-ARCH=$(uname -m)
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+[ "$OS" != "linux" ] && echo -e "${RED}Linux only${NC}" && exit 1
 
-if [ "$OS" != "linux" ]; then
-  echo "Error: This installer only supports Linux (detected: $OS)"
-  exit 1
-fi
-
+ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-  BIN_NAME="knowlinux-agent-linux-x64"
+  BIN="knowlinux-agent-linux-x64"
 elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-  BIN_NAME="knowlinux-agent-linux-arm64"
+  BIN="knowlinux-agent-linux-arm64"
 else
-  echo "Error: Unsupported architecture: $ARCH"
+  echo -e "${RED}Unsupported: $ARCH${NC}"
   exit 1
 fi
 
-echo "Detected: $OS / $ARCH"
-echo "Binary: $BIN_NAME"
-echo ""
-# Download the binary
-DOWNLOAD_URL="https://github.com/muneercybrid/KnowLinux/releases/latest/download/${BIN_NAME}"
-echo "Downloading from: $DOWNLOAD_URL"
-TMP_FILE=$(mktemp)
-if ! curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"; then
-  echo "Error: Download failed."
-  echo ""
-  echo "This can happen if:"
-  echo "  1. No release has been published yet"
-  echo "  2. Your network blocks github.com"
-  echo "  3. The binary for your architecture hasn't been built"
-  rm -f "$TMP_FILE"
+echo -e "  Platform   ${GREEN}$OS/$ARCH${NC}"
+
+REPO="muneercybrid/KnowLinux"
+URL="https://github.com/${REPO}/releases/latest/download/${BIN}"
+TMP=$(mktemp)
+
+printf "  Download   "
+if ! curl -fsSL "$URL" -o "$TMP" 2>/dev/null; then
+  echo -e "${RED}failed${NC}"
+  echo -e "  ${DIM}Manual: https://github.com/${REPO}/releases${NC}"
+  rm -f "$TMP"
   exit 1
 fi
+SIZE=$(du -h "$TMP" | cut -f1)
+echo -e "${GREEN}$SIZE${NC}"
 
-chmod +x "$TMP_FILE"
-echo "Downloaded: $(du -h "$TMP_FILE" | cut -f1)"
-echo ""
+printf "  Install    "
+chmod +x "$TMP"
+mkdir -p "$HOME/.local/bin"
+mv "$TMP" "$HOME/.local/bin/knowlinux-agent"
+echo -e "${GREEN}~/.local/bin/knowlinux-agent${NC}"
 
-# Install to ~/.local/bin
-INSTALL_DIR="$HOME/.local/bin"
-mkdir -p "$INSTALL_DIR"
-mv "$TMP_FILE" "$INSTALL_DIR/knowlinux-agent"
-echo "Installed to: $INSTALL_DIR/knowlinux-agent"
+printf "  PATH       "
+PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+ADDED=0
+for RC in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+  if [ -f "$RC" ] && ! grep -qF "$PATH_LINE" "$RC"; then
+    echo "" >> "$RC"
+    echo "# KnowLinux Companion" >> "$RC"
+    echo "$PATH_LINE" >> "$RC"
+    ADDED=$((ADDED+1))
+  fi
+done
+echo -e "${GREEN}$ADDED shell config(s)${NC}"
+export PATH="$HOME/.local/bin:$PATH"
 
-# Detect init system
-if command -v systemctl &> /dev/null && systemctl --user status &> /dev/null; then
-  USE_SYSTEMD=true
-else
-  USE_SYSTEMD=false
-fi
-
-if [ "$USE_SYSTEMD" = true ]; then
-  echo "Setting up systemd user service..."
+printf "  Service    "
+if command -v systemctl >/dev/null 2>&1 && systemctl --user status >/dev/null 2>&1; then
   mkdir -p "$HOME/.config/systemd/user"
-  cat > "$HOME/.config/systemd/user/knowlinux-agent.service" << 'SERVICE_END'
+  cat > "$HOME/.config/systemd/user/knowlinux-agent.service" << 'SERVICE'
 [Unit]
 Description=KnowLinux Companion Agent
 After=network-online.target
@@ -75,73 +77,42 @@ Environment="HOME=%h"
 
 [Install]
 WantedBy=default.target
-SERVICE_END
+SERVICE
   systemctl --user daemon-reload
-  systemctl --user enable knowlinux-agent.service
-  systemctl --user start knowlinux-agent.service
-  echo "Service status:"
-  systemctl --user status knowlinux-agent.service --no-pager | head -5
+  systemctl --user enable knowlinux-agent.service 2>/dev/null
+  systemctl --user start knowlinux-agent.service 2>/dev/null
+  echo -e "${GREEN}systemd (running)${NC}"
 else
-  echo "systemd not available, using nohup fallback..."
-  SUPERVISOR="$HOME/.local/bin/knowlinux-supervisor.sh"
-  cat > "$SUPERVISOR" << 'SUP_END'
+  SUP="$HOME/.local/bin/knowlinux-supervisor.sh"
+  cat > "$SUP" << 'SUP_END'
 #!/bin/bash
 while true; do
   "$HOME/.local/bin/knowlinux-agent" daemon
   sleep 10
 done
 SUP_END
-  chmod +x "$SUPERVISOR"
+  chmod +x "$SUP"
   pkill -f "knowlinux-supervisor.sh" 2>/dev/null || true
   pkill -f "knowlinux-agent daemon" 2>/dev/null || true
-  nohup "$SUPERVISOR" < /dev/null > /dev/null 2>&1 &
-  echo "Supervisor started with PID: $!"
+  nohup "$SUP" < /dev/null > /dev/null 2>&1 &
+  echo -e "${GREEN}nohup (running)${NC}"
 fi
-echo ""
-
-# Auto-add PATH to shell rc files
-PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
-for RC in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
-  if [ -f "$RC" ] && ! grep -qF "$PATH_LINE" "$RC"; then
-    echo "" >> "$RC"
-    echo "# KnowLinux Companion" >> "$RC"
-    echo "$PATH_LINE" >> "$RC"
-    echo "Added PATH to $RC"
-  fi
-done
-
-# Apply PATH for this session
-export PATH="$HOME/.local/bin:$PATH"
 
 echo ""
-echo "Installation complete."
+echo -e "${GREEN}✓ Installation complete${NC}"
 echo ""
 
-# Ask if user wants to connect now
-echo "Connect this machine to KnowLinux now? [y/N]"
-read -t 30 CONNECT_NOW || CONNECT_NOW="n"
-
-if [ "$CONNECT_NOW" = "y" ] || [ "$CONNECT_NOW" = "Y" ]; then
+printf "Connect this machine to KnowLinux now? [Y/n] "
+read -t 30 CONNECT < /dev/tty || CONNECT="y"
+if [ "$CONNECT" = "y" ] || [ "$CONNECT" = "Y" ] || [ -z "$CONNECT" ]; then
   echo ""
-  "$HOME/.local/bin/knowlinux-agent" connect
+  knowlinux-agent connect
   echo ""
-  echo "Now enable auto-execute for headless operation:"
-  echo "  knowlinux-agent toggle-auto"
+  echo -e "${DIM}Next: knowlinux-agent toggle-auto${NC}"
 else
   echo ""
-  echo "To connect later, run:"
-  echo "  source ~/.bashrc  # or ~/.zshrc"
-  echo "  knowlinux-agent connect"
-  echo ""
-  echo "Then enable auto-execute:"
-  echo "  knowlinux-agent toggle-auto"
+  echo -e "${DIM}Next steps:${NC}"
+  echo -e "${DIM}  source ~/.bashrc${NC}"
+  echo -e "${DIM}  knowlinux-agent connect${NC}"
+  echo -e "${DIM}  knowlinux-agent toggle-auto${NC}"
 fi
-
-echo ""
-echo "View service logs:"
-if [ "$USE_SYSTEMD" = true ]; then
-  echo "  journalctl --user -u knowlinux-agent -f"
-else
-  echo "  tail -f ~/.knowlinux/daemon.log"
-fi
-echo ""
