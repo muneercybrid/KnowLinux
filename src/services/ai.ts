@@ -1,9 +1,9 @@
-// Supported NVIDIA NIM models, ordered by preference (fast & good first, heavy reasoning last)
+// Supported NVIDIA NIM models, ordered by preference. 
+// We skip the 410 End-of-Life models to save latency.
 export const MODEL_CHAIN = [
-  "meta/llama-3.3-70b-instruct",        // Fast, reliable, good for general tasks
-  "nvidia/nemotron-3-nano-30b-a3b",     // Very fast, smaller fallback
-  "nvidia/nemotron-3-super-120b-a12b",  // Strong reasoning, slower
-  "nvidia/nemotron-3-ultra-550b-a55b",  // Heavyweight, best for complex reasoning
+  "nvidia/nemotron-3-ultra-550b-a55b",  // Confirmed working, excellent reasoning (728ms)
+  "meta/llama-3.1-405b-instruct",       // Highly reliable fallback
+  "mistralai/mixtral-8x7b-instruct-v0.1" // Fast, lightweight fallback
 ]
 
 export async function generateAIResponse(prompt: string, systemContext: string = ''): Promise<string> {
@@ -45,7 +45,7 @@ export async function generateAIResponse(prompt: string, systemContext: string =
         const errorText = await response.text()
         console.warn(`[AI] Model ${model} failed: ${response.status} - ${errorText}`)
         lastError = new Error(`Model ${model} failed: ${response.status}`)
-        continue // Try next model
+        continue 
       }
 
       const data = await response.json()
@@ -55,7 +55,6 @@ export async function generateAIResponse(prompt: string, systemContext: string =
     } catch (error: any) {
       console.warn(`[AI] Model ${model} threw error:`, error.message)
       lastError = error
-      // Continue to next model
     }
   }
 
