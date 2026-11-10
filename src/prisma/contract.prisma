@@ -164,6 +164,8 @@ model CompanionDevice {
   name        String   @default("Linux Machine")
   token       String   @unique
   lastSeenAt  DateTime @default(now())
+  osInfo      String?  @default("")
+  packages    CompanionPackage[]
   createdAt   DateTime @default(now())
   @@map("companion_device")
 }
@@ -179,3 +181,15 @@ model DeviceAuthCode {
 }
 
 
+
+model CompanionPackage {
+  id          Int             @id @default(autoincrement())
+  deviceId    Int
+  device      CompanionDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  name        String
+  version     String?
+  description String?
+  createdAt   DateTime        @default(now())
+  @@index([deviceId])
+  @@map("companion_package")
+}

@@ -1,0 +1,164 @@
+[
+  {
+    "id": "table.companion_package",
+    "label": "Create table \"companion_package\"",
+    "summary": "Creates table \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"companion_package\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_package\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"companion_package\"",
+        "sql": "CREATE TABLE \"public\".\"companion_package\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"deviceId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"version\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"companion_package\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_package\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_device.osInfo",
+    "label": "Add column \"osInfo\" to \"companion_device\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "osInfo",
+        "table": "companion_device"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"osInfo\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_device",
+          "osInfo"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"osInfo\"",
+        "sql": "ALTER TABLE \"public\".\"companion_device\" ADD COLUMN \"osInfo\" text DEFAULT ''"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"osInfo\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_device",
+          "osInfo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.companion_package.companion_package_deviceId_idx_a7d461e8",
+    "label": "Create index \"companion_package_deviceId_idx_a7d461e8\" on \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "companion_package_deviceId_idx_a7d461e8",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"companion_package_deviceId_idx_a7d461e8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_package_deviceId_idx_a7d461e8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"companion_package_deviceId_idx_a7d461e8\"",
+        "sql": "CREATE INDEX \"companion_package_deviceId_idx_a7d461e8\" ON \"public\".\"companion_package\" (\"deviceId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"companion_package_deviceId_idx_a7d461e8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companion_package_deviceId_idx_a7d461e8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.companion_package.companion_package_deviceId_fkey",
+    "label": "Add foreign key \"companion_package_deviceId_fkey\" on \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "companion_package_deviceId_fkey",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"companion_package_deviceId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_package_deviceId_fkey",
+          "public",
+          "\"public\".\"companion_package\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"companion_package_deviceId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"companion_package\"\nADD CONSTRAINT \"companion_package_deviceId_fkey\"\nFOREIGN KEY (\"deviceId\")\nREFERENCES \"public\".\"companion_device\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"companion_package_deviceId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companion_package_deviceId_fkey",
+          "public",
+          "\"public\".\"companion_package\""
+        ]
+      }
+    ]
+  }
+]

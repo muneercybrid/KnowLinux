@@ -36,16 +36,69 @@ async function authenticate() {
 async function scanSystem() {
   console.log('🔍 Scanning your Linux system...')
   if (!fs.existsSync(CONFIG_FILE)) {
-    console.error('❌ Not connected. Please run "knowlinux-agent connect" first.')
+    console.error('❌ Not connected. Please run "knowlinux connect" first.')
     return
   }
+
   const { token } = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
   const osRelease = fs.existsSync('/etc/os-release') ? fs.readFileSync('/etc/os-release', 'utf8') : ''
   const distro = osRelease.match(/PRETTY_NAME="(.+)"/)?.[1] || 'Unknown Linux'
-  console.log(`Detected: ${distro} (${os.arch()})`)
-  console.log(`Kernel: ${os.release()}`)
-  console.log(`Hostname: ${os.hostname()}`)
-  console.log('✅ Scan complete. (Upload endpoint coming next.)')
+
+  console.log(`   Distro: ${distro}`)
+  console.log(`   Kernel: ${os.release()}`)
+  console.log(`   Arch: ${os.arch()}`)
+  console.log(`   Hostname: ${os.hostname()}`)
+
+  // Get installed packages via dpkg
+  console.log('📦 Reading installed packages...')
+  let packages: { name: string; version: string; description: string }[] = []
+
+  try {
+    const proc = Bun.spawn(['dpkg-query', '-W', '-f', '${Package}|${Version}|${Description}\n'], {
+      stdout: 'pipe',
+    })
+    const output = await new Response(proc.stdout).text()
+    
+    packages = output.split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const [name, version, description] = line.split('|')
+        return {
+          name: name || '',
+          version: version || '',
+          description: (description || '').split('\n')[0]
+        }
+      })
+      .filter(p => p.name)
+
+    console.log(`   Found ${packages.length} installed packages`)
+  } catch (e) {
+    console.log('   ⚠️  Could not read packages via dpkg (non-Debian system?)')
+  }
+
+  // Upload to backend
+  console.log('☁️  Uploading to KnowLinux...')
+  const res = await fetch(`${API_URL}/sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      distro,
+      kernel: os.release(),
+      hostname: os.hostname(),
+      arch: os.arch(),
+      packages
+    })
+  })
+
+  if (res.ok) {
+    const data = await res.json()
+    console.log(`✅ Scan complete! Uploaded ${data.packagesCount} packages.`)
+  } else {
+    console.error('❌ Upload failed:', await res.text())
+  }
 }
 
 const command = process.argv[2]

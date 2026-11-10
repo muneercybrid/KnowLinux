@@ -46,3 +46,79 @@ companionApp.post('/authorize', async (c) => {
 })
 
 export default companionApp
+
+companionApp.post('/sync', async (c) => {
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Missing token' }, 401)
+  }
+  const token = authHeader.replace('Bearer ', '')
+
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ token }).first()
+  if (!device) return c.json({ error: 'Invalid token' }, 401)
+
+  const body = await c.req.json()
+  const { distro, kernel, hostname, arch, packages } = body
+
+  // Update device with system info
+  await db.orm.public.CompanionDevice.where({ id: device.id }).update({
+    osInfo: JSON.stringify({ distro, kernel, hostname, arch }),
+    lastSeenAt: Temporal.Now.instant()
+  })
+
+  // Clear old packages and insert new
+  if (Array.isArray(packages) && packages.length > 0) {
+    // Delete existing packages for this device
+    const existing = await db.orm.public.CompanionPackage.where({ deviceId: device.id }).all()
+    for (const pkg of existing) {
+      await db.orm.public.CompanionPackage.where({ id: pkg.id }).delete()
+    }
+
+    // Insert new packages (batch)
+    for (const pkg of packages.slice(0, 500)) {
+      await db.orm.public.CompanionPackage.create({
+        deviceId: device.id,
+        name: pkg.name,
+        version: pkg.version || null,
+        description: pkg.description || null
+      })
+    }
+  }
+
+  return c.json({
+    success: true,
+    deviceId: device.id,
+    packagesCount: packages?.length || 0
+  })
+})
+
+companionApp.get('/devices', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const db = getDb()
+  const devices = await db.orm.public.CompanionDevice.where({ userId: user.id }).all()
+
+  return c.json(devices.map((d: any) => ({
+    id: d.id,
+    name: d.name,
+    osInfo: d.osInfo,
+    lastSeenAt: d.lastSeenAt,
+    createdAt: d.createdAt
+  })))
+})
+
+companionApp.delete('/devices/:id', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+
+  await db.orm.public.CompanionDevice.where({ id: deviceId }).delete()
+  return c.json({ success: true })
+})
