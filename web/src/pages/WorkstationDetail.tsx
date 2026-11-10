@@ -30,7 +30,7 @@ export default function WorkstationDetail() {
       .then(r => r.json())
       .then(d => { setPackages(Array.isArray(d) ? d : []); setLoading(false) })
     refreshCommands()
-    const interval = setInterval(refreshCommands, 5000)
+    const interval = setInterval(refreshCommands, 1000)
     return () => clearInterval(interval)
   }, [id])
 

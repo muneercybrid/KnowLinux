@@ -1,3 +1,4 @@
+import * as readline from 'node:readline'
 #!/usr/bin/env bun
 import os from 'os'
 import fs from 'fs'
@@ -114,56 +115,68 @@ async function pollCommands() {
     return
   }
   const { token } = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
-  console.log('👂 Listening for commands from KnowLinux... (Ctrl+C to stop)')
+  console.log('👂 Listening for commands from KnowLinux (polling every 1s)...')
+  console.log('Press Ctrl+C to stop.\n')
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 
   while (true) {
     try {
       const res = await fetch(`${API_URL}/pending-commands`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      
       if (res.ok) {
         const commands: any[] = await res.json()
+        
         for (const cmd of commands) {
-          console.log(`\n🔔 Command received: ${cmd.command}`)
-          console.log('⚠️  Review carefully. Type "y" to execute, anything else to skip:')
-          const answer = prompt('> ') || ''
-          if (answer.toLowerCase() === 'y') {
-            console.log('⏳ Executing...')
-            const proc = Bun.spawn(['bash', '-c', cmd.command], {
-              stdout: 'pipe', stderr: 'pipe'
-            })
-            const stdout = await new Response(proc.stdout).text()
-            const stderr = await new Response(proc.stderr).text()
-            const exitCode = await proc.exited
-            
-            const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
-            console.log(`✅ Exit code: ${exitCode}`)
-            console.log(fullOutput)
+          console.log(`\n\n🔔 COMMAND RECEIVED: ${cmd.command}`)
+          console.log('─'.repeat(50))
+          
+          const answer = await new Promise<string>((resolve) => {
+            rl.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
+          })
 
-            await fetch(`${API_URL}/commands/${cmd.id}/result`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ output: fullOutput, exitCode })
-            })
+          if (answer === 'y') {
+            console.log('⏳ Executing...')
+            try {
+              const proc = Bun.spawn(['bash', '-c', cmd.command], { stdout: 'pipe', stderr: 'pipe' })
+              const stdout = await new Response(proc.stdout).text()
+              const stderr = await new Response(proc.stderr).text()
+              const exitCode = await proc.exited
+              
+              const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
+              console.log(`✅ Exit code: ${exitCode}`)
+              console.log(fullOutput)
+
+              await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ output: fullOutput, exitCode })
+              })
+            } catch (execErr: any) {
+              console.error('❌ Execution failed:', execErr.message)
+              await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ output: 'Execution failed: ' + execErr.message, exitCode: -1 })
+              })
+            }
           } else {
+            console.log('❌ Command rejected.')
             await fetch(`${API_URL}/commands/${cmd.id}/result`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({ output: 'Command rejected by user.', exitCode: -1 })
             })
           }
         }
       }
     } catch (e) {
-      // Silent error, retry in 5s
+      // Silent error, retry in 1s
     }
-    await new Promise(r => setTimeout(r, 5000))
+    
+    await new Promise(r => setTimeout(r, 1000)) // 1 second polling
   }
 }
 
