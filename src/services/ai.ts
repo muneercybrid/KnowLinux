@@ -1,9 +1,8 @@
-// Supported NVIDIA NIM models, ordered by preference. 
-// We skip the 410 End-of-Life models to save latency.
 export const MODEL_CHAIN = [
-  "nvidia/nemotron-3-ultra-550b-a55b",  // Confirmed working, excellent reasoning (728ms)
-  "meta/llama-3.1-405b-instruct",       // Highly reliable fallback
-  "mistralai/mixtral-8x7b-instruct-v0.1" // Fast, lightweight fallback
+  "nvidia/nemotron-3.5-lightning-30b-a3b",     // Fast, general purpose
+  "nvidia/nemotron-3.5-bolt-e4b",              // Fast, general purpose
+  "poolside/laguna-xs-2.1",                    // Good for coding/commands
+  "nvidia/nemotron-3-ultra-550b-a55b",         // Heavy reasoning fallback
 ]
 
 export async function generateAIResponse(prompt: string, systemContext: string = ''): Promise<string> {

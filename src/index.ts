@@ -1,3 +1,4 @@
+import { generateAIResponse } from "./services/ai.js"
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
