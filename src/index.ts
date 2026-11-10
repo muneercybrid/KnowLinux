@@ -413,6 +413,13 @@ app.route('/api/companion', companionApp)
 
 app.route('/api/auth', googleApp)
 
+app.get('/api/debug/env', (c) => c.json({
+  hasGoogleId: !!process.env.GOOGLE_CLIENT_ID,
+  hasGoogleSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  nodeEnv: process.env.NODE_ENV,
+  googleIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) || null
+}))
+
 // --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
