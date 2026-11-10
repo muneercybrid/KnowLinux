@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.companion_command.cwdAfter",
+    "label": "Add column \"cwdAfter\" to \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "cwdAfter",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"cwdAfter\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "cwdAfter"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"cwdAfter\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\" ADD COLUMN \"cwdAfter\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"cwdAfter\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "cwdAfter"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_command.cwdBefore",
+    "label": "Add column \"cwdBefore\" to \"companion_command\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "cwdBefore",
+        "table": "companion_command"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"cwdBefore\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "cwdBefore"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"cwdBefore\"",
+        "sql": "ALTER TABLE \"public\".\"companion_command\" ADD COLUMN \"cwdBefore\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"cwdBefore\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_command",
+          "cwdBefore"
+        ]
+      }
+    ]
+  }
+]

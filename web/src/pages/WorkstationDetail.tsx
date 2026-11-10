@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Footer } from '../components/Footer'
@@ -6,7 +6,7 @@ import { PackageModal, PackageInfo } from '../components/PackageModal'
 import { ArrowLeft, Search, Terminal, Send, Loader2, Info, Layout, Wrench, Package, Library, AlertTriangle, Server } from 'lucide-react'
 
 interface Device { id: number; name: string; osInfo: string; lastSeenAt: string }
-interface Command { id: number; command: string; status: string; output: string | null; exitCode: number | null; createdAt: string }
+interface Command { id: number; command: string; status: string; output: string | null; exitCode: number | null; createdAt: string; requiresSudo?: boolean; cwdBefore?: string | null; cwdAfter?: string | null }
 
 const TABS = [
   { id: 'info', label: 'System Info', icon: Info },
@@ -31,6 +31,7 @@ export default function WorkstationDetail() {
   const [newCommand, setNewCommand] = useState('')
   const [sending, setSending] = useState(false)
   const [selectedPkg, setSelectedPkg] = useState<PackageInfo | null>(null)
+  const terminalRef = useRef<HTMLDivElement>(null)
   const [requiresSudo, setRequiresSudo] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [pendingCommandId, setPendingCommandId] = useState<number | null>(null)
@@ -110,6 +111,13 @@ export default function WorkstationDetail() {
     activeTab === 'libraries' ? filterList(libraries) :
     activeTab === 'outdated' ? filterList(outdated) : []
 
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+    }
+  }, [commands])
+
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navbar />
@@ -165,40 +173,67 @@ export default function WorkstationDetail() {
         )}
 
         {activeTab === 'commands' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Send className="w-5 h-5 text-brand" /> Send Command</h2>
-              <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
-                <div className="flex gap-2 mb-3">
-                  <button onClick={() => setRequiresSudo(!requiresSudo)} className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border shrink-0 ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand'}`} title={requiresSudo ? 'Switch to normal user' : 'Switch to sudo mode'}>
-                    {requiresSudo ? 'sudo' : 'user'}
-                  </button>
-                  <input type="text" value={newCommand} onChange={e => setNewCommand(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
-                    placeholder="e.g., uname -a"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
-                  <button onClick={handleSendCommand} disabled={sending || !newCommand.trim()}
-                    className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50">
-                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-[var(--text-faint)]">Agent must be running: <code className="text-brand">knowlinux-agent daemon</code></p>
+          <div className="flex flex-col" style={{ height: '70vh' }}>
+            <div
+              ref={terminalRef}
+              className="flex-1 overflow-y-auto bg-[#0d1117] border border-[#30363d] rounded-t-lg p-4 font-mono text-sm"
+            >
+              <div className="text-[var(--text-faint)] mb-3 pb-2 border-b border-[#21262d]">
+                Connected to <span className="text-brand">{os.hostname || 'remote'}</span> ({os.distro || 'Linux'})
               </div>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Terminal className="w-5 h-5 text-brand" /> History ({commands.length})</h2>
-              <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {commands.length === 0 ? <p className="text-center py-8 text-[var(--text-muted)]">No commands yet.</p> : commands.map(cmd => (
-                  <div key={cmd.id} className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-color)]">
-                    <div className="flex justify-between mb-1">
-                      <code className="text-brand font-mono text-sm">$ {cmd.command}</code>
-                      <span className={`text-xs px-2 py-0.5 rounded ${cmd.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>{cmd.status}</span>
-                    </div>
-                    {cmd.output && <pre className="text-xs bg-[#0d1117] p-2 rounded mt-2 overflow-x-auto max-h-40 text-emerald-400">{cmd.output}</pre>}
+              {commands.slice().reverse().map((cmd: Command) => (
+                <div key={cmd.id} className="mb-2">
+                  <div className="flex flex-wrap items-baseline">
+                    <span className="text-emerald-500">{os.hostname || 'remote'}</span>
+                    <span className="text-[#8b949e]">:</span>
+                    <span className="text-blue-400">{cmd.cwdBefore || '~'}</span>
+                    <span className="text-[#8b949e]">$ </span>
+                    <span className="text-[var(--text-main)]">{cmd.command}</span>
+                    {cmd.requiresSudo && <span className="text-amber-500 text-xs ml-2">[sudo]</span>}
                   </div>
-                ))}
+                  {cmd.status === 'pending' && <div className="text-amber-500 text-xs mt-1">running...</div>}
+                  {cmd.status === 'awaiting_password' && <div className="text-amber-500 text-xs mt-1">awaiting password</div>}
+                  {cmd.status === 'completed' && cmd.output && (
+                    <pre className={`whitespace-pre-wrap mt-1 ${cmd.exitCode && cmd.exitCode !== 0 ? 'text-red-400' : 'text-[#c9d1d9]'}`}>{cmd.output}</pre>
+                  )}
+                </div>
+              ))}
+              <div className="flex flex-wrap items-baseline">
+                <span className="text-emerald-500">{os.hostname || 'remote'}</span>
+                <span className="text-[#8b949e]">:</span>
+                <span className="text-blue-400">{commands[0]?.cwdAfter || '~'}</span>
+                <span className="text-[#8b949e]">$ </span>
+                <span className="text-[var(--text-main)]">{newCommand}</span>
+                <span className="text-brand animate-pulse">▊</span>
               </div>
             </div>
+            <div className="flex items-center gap-2 bg-[#161b22] border border-[#30363d] border-t-0 rounded-b-lg p-3">
+              <button
+                onClick={() => setRequiresSudo(!requiresSudo)}
+                className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border shrink-0 ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[#21262d] border-[#30363d] text-[#8b949e] hover:border-brand'}`}
+                title={requiresSudo ? 'Switch to normal user' : 'Switch to sudo mode'}
+              >
+                {requiresSudo ? 'sudo' : 'user'}
+              </button>
+              <input
+                type="text"
+                value={newCommand}
+                onChange={e => setNewCommand(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
+                placeholder="Type a command..."
+                className="flex-1 px-3 py-2 rounded-lg border border-[#30363d] bg-[#0d1117] text-[var(--text-main)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+              <button
+                onClick={handleSendCommand}
+                disabled={sending || !newCommand.trim()}
+                className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-[var(--text-faint)] mt-2">
+              {commands.length} command{commands.length !== 1 ? 's' : ''} executed · daemon polls every 1s
+            </p>
           </div>
         )}
 

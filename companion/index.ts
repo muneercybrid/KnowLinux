@@ -133,31 +133,30 @@ async function scanSystem() {
 }
 async function pollCommands() {
   if (!fs.existsSync(CONFIG_FILE)) {
-    console.error('❌ Not connected. Run "knowlinux connect" first.')
+    console.error('Not connected. Run knowlinux connect first.')
     return
   }
   const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
   const { token } = config
   const autoExecute = config.autoExecute === true
   const auditLog = path.join(CONFIG_DIR, 'audit.log')
+  const isRoot = process.getuid?.() === 0
+  const currentUser = os.userInfo().username || 'user'
 
-  console.log('👂 Listening for commands from KnowLinux (polling every 1s)...')
+  console.log('Listening for commands from KnowLinux (polling every 1s)...')
   if (autoExecute) {
-    console.log('⚠️  AUTO-EXECUTE ENABLED — commands run without confirmation')
+    console.log('AUTO-EXECUTE ENABLED - commands run without confirmation')
   } else {
-    console.log('🔒 CONFIRM MODE — you will be prompted before each command')
+    console.log('CONFIRM MODE - you will be prompted before each command')
   }
   console.log('Press Ctrl+C to stop.\n')
 
-  // Only create readline if we're in a real TTY and NOT in auto-execute
   let rl: readline.Interface | null = null
   const hasTTY = process.stdin.isTTY === true
   if (!autoExecute && hasTTY) {
     try {
       rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-    } catch (e) {
-      console.warn('⚠️  Could not attach to terminal. Running in non-interactive mode.')
-    }
+    } catch (e) {}
   }
 
   const startedAt = Date.now()
@@ -165,13 +164,58 @@ async function pollCommands() {
   const saveStatus = () => {
     try {
       fs.writeFileSync(STATUS_FILE, JSON.stringify({
-        startedAt,
-        lastPollAt: new Date().toISOString(),
-        commandsExecuted,
-        autoExecute,
-        pid: process.pid
+        startedAt, lastPollAt: new Date().toISOString(),
+        commandsExecuted, autoExecute, pid: process.pid
       }, null, 2))
     } catch (e) {}
+  }
+
+  const sessionState = { cwd: os.homedir(), prevCwd: os.homedir() }
+
+  const executeCommand = async (cmd: any): Promise<{ output: string; exitCode: number; cwdBefore: string; cwdAfter: string }> => {
+    const command = cmd.command.trim()
+    const cwdBefore = sessionState.cwd
+    const cwdEscaped = JSON.stringify(sessionState.cwd)
+
+    try {
+      let proc: any
+      if (cmd.requiresSudo && !isRoot && cmd.sudoPassword) {
+        const strippedCmd = command.replace(/^sudo\s+/, '')
+        const wrapped = `cd ${cwdEscaped} 2>/dev/null; sudo -S -p '' bash -c ${JSON.stringify(strippedCmd)}; echo "__KL_CWD__$(pwd)"`
+        proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe', stdin: 'pipe' })
+        proc.stdin.write(cmd.sudoPassword + '\n')
+        proc.stdin.end()
+      } else if (cmd.requiresSudo && isRoot) {
+        const strippedCmd = command.replace(/^sudo\s+/, '')
+        const wrapped = `cd ${cwdEscaped} 2>/dev/null; ${strippedCmd}; echo "__KL_CWD__$(pwd)"`
+        proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe' })
+      } else {
+        const wrapped = `cd ${cwdEscaped} 2>/dev/null; ${command}; echo "__KL_CWD__$(pwd)"`
+        proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe' })
+      }
+
+      const stdout = await new Response(proc.stdout).text()
+      const stderr = await new Response(proc.stderr).text()
+      const exitCode = await proc.exited
+
+      const cwdMatch = stdout.match(/__KL_CWD__([^\n]*)/)
+      let cwdAfter = sessionState.cwd
+      let cleanStdout = stdout
+      if (cwdMatch) {
+        const newCwd = cwdMatch[1].trim()
+        cleanStdout = stdout.replace(/__KL_CWD__[^\n]*/, '').trimEnd()
+        if (newCwd && newCwd.startsWith('/')) {
+          sessionState.prevCwd = sessionState.cwd
+          sessionState.cwd = newCwd
+          cwdAfter = newCwd
+        }
+      }
+
+      const output = cleanStdout + (stderr ? (cleanStdout ? '\n' : '') + stderr : '')
+      return { output, exitCode, cwdBefore, cwdAfter }
+    } catch (e: any) {
+      return { output: 'Execution failed: ' + e.message, exitCode: -1, cwdBefore, cwdAfter: sessionState.cwd }
+    }
   }
 
   while (true) {
@@ -182,84 +226,53 @@ async function pollCommands() {
       if (res.ok) {
         const commands: any[] = await res.json()
         for (const cmd of commands) {
-          console.log(`\n\n🔔 COMMAND RECEIVED: ${cmd.command}`)
-          console.log('─'.repeat(50))
+          console.log(`\nCommand received: ${cmd.command}`)
           let shouldExecute = autoExecute
           if (!autoExecute) {
             if (rl) {
               const answer = await new Promise<string>((resolve) => {
-                rl!.question('⚠️  Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
+                rl!.question('Execute this command? (y/N): ', (ans) => resolve(ans.trim().toLowerCase()))
               })
               shouldExecute = answer === 'y'
-            } else {
-              console.log('⚠️  No terminal attached. Rejecting command (enable auto-execute for headless mode).')
-              shouldExecute = false
             }
           }
+
           if (shouldExecute) {
-            console.log('⏳ Executing...')
+            console.log('Executing...')
             const timestamp = new Date().toISOString()
+            const result = await executeCommand(cmd)
+            console.log(`Exit code: ${result.exitCode}`)
+            if (result.output) console.log(result.output)
+            console.log(`CWD: ${result.cwdAfter}`)
+
+            commandsExecuted++
+            saveStatus()
             try {
-              const isRoot = process.getuid?.() === 0
-              let proc
-              
-              if (cmd.requiresSudo && !isRoot && cmd.sudoPassword) {
-                // Use sudo -S, password piped via stdin
-                console.log('🔑 Running with sudo (password provided)...')
-                proc = Bun.spawn(['bash', '-c', `sudo -S -p '' ${cmd.command.replace(/^sudo\s+/, '')}`], {
-                  stdout: 'pipe',
-                  stderr: 'pipe',
-                  stdin: 'pipe'
-                })
-                proc.stdin.write(cmd.sudoPassword + '\n')
-                proc.stdin.end()
-              } else if (cmd.requiresSudo && isRoot) {
-                // Already root, strip sudo prefix
-                console.log('🔑 Running as root (no sudo needed)...')
-                proc = Bun.spawn(['bash', '-c', cmd.command.replace(/^sudo\s+/, '')], {
-                  stdout: 'pipe', stderr: 'pipe'
-                })
-              } else {
-                // Regular command
-                proc = Bun.spawn(['bash', '-c', cmd.command], {
-                  stdout: 'pipe', stderr: 'pipe'
-                })
-              }
-              
-              const stdout = await new Response(proc.stdout).text()
-              const stderr = await new Response(proc.stderr).text()
-              const exitCode = await proc.exited
-              const fullOutput = stdout + (stderr ? '\n[stderr]\n' + stderr : '')
-              console.log(`✅ Exit code: ${exitCode}`)
-              commandsExecuted++
-              saveStatus()
-              console.log(fullOutput)
-              try { fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | SUDO: ${cmd.requiresSudo ? 'yes' : 'no'} | EXIT: ${exitCode}\n`) } catch(e) {}
-              const resultRes = await fetch(`${API_URL}/commands/${cmd.id}/result`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ output: fullOutput, exitCode })
+              fs.appendFileSync(auditLog, `[${timestamp}] CMD: ${cmd.command} | EXIT: ${result.exitCode}\n`)
+            } catch(e) {}
+
+            const resultRes = await fetch(`${API_URL}/commands/${cmd.id}/result`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({
+                output: result.output,
+                exitCode: result.exitCode,
+                cwdBefore: result.cwdBefore,
+                cwdAfter: result.cwdAfter,
+                userName: currentUser
               })
-              if (!resultRes.ok) {
-                const errBody = await resultRes.text()
-                console.error(`❌ Failed to post result: ${resultRes.status} - ${errBody}`)
-              } else {
-                console.log(`📤 Result uploaded to server`)
-              }
-            } catch (execErr: any) {
-              console.error('❌ Execution failed:', execErr.message)
-              await fetch(`${API_URL}/commands/${cmd.id}/result`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ output: 'Failed: ' + execErr.message, exitCode: -1 })
-              })
+            })
+            if (!resultRes.ok) {
+              console.error(`Failed to post: ${resultRes.status}`)
+            } else {
+              console.log('Result uploaded')
             }
           } else {
-            console.log('❌ Rejected.')
+            console.log('Rejected.')
             await fetch(`${API_URL}/commands/${cmd.id}/result`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ output: 'Rejected by user.', exitCode: -1 })
+              body: JSON.stringify({ output: 'Rejected.', exitCode: -1, cwdBefore: sessionState.cwd, cwdAfter: sessionState.cwd })
             })
           }
         }

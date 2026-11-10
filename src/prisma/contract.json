@@ -358,6 +358,20 @@
                   "kind": "scalar"
                 }
               },
+              "cwdAfter": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "cwdBefore": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "deviceId": {
                 "nullable": false,
                 "type": {
@@ -447,6 +461,12 @@
                 },
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "cwdAfter": {
+                  "column": "cwdAfter"
+                },
+                "cwdBefore": {
+                  "column": "cwdBefore"
                 },
                 "deviceId": {
                   "column": "deviceId"
@@ -2067,6 +2087,16 @@
                   },
                   "nullable": false
                 },
+                "cwdAfter": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "cwdBefore": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "deviceId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -3257,7 +3287,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a34f6f53fd93a6bf7738e352d2c6421ea85d6506db46f688de915ae25b2a62b5"
+    "storageHash": "98a13e848a0c0327842e9a3a088c3db9ebf6bf87dc885373c858f721dfd1ddf7"
   },
   "execution": {
     "executionHash": "edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6",

@@ -206,6 +206,8 @@ model CompanionCommand {
   device      CompanionDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   command     String
   status      String          @default("pending")
+  cwdBefore   String?
+  cwdAfter    String?
   requiresSudo Boolean        @default(false)
   sudoPassword String?
   passwordExpiresAt DateTime?

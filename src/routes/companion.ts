@@ -172,6 +172,8 @@ companionApp.get('/devices/:id/commands', async (c) => {
     output: cmd.output,
     exitCode: cmd.exitCode,
     requiresSudo: cmd.requiresSudo ?? false,
+    cwdBefore: cmd.cwdBefore || null,
+    cwdAfter: cmd.cwdAfter || null,
     createdAt: cmd.createdAt ? String(cmd.createdAt) : null,
     executedAt: cmd.executedAt ? String(cmd.executedAt) : null,
   }))
@@ -224,11 +226,13 @@ companionApp.post('/commands/:id/result', async (c) => {
   const device = await db.orm.public.CompanionDevice.where({ token }).first()
   if (!device) return c.json({ error: 'Invalid token' }, 401)
   const cmdId = parseInt(c.req.param('id'))
-  const { output, exitCode } = await c.req.json()
+  const { output, exitCode, cwdBefore, cwdAfter } = await c.req.json()
   await db.orm.public.CompanionCommand.where({ id: cmdId, deviceId: device.id }).update({
     status: 'completed',
     output,
     exitCode,
+    cwdBefore: cwdBefore || null,
+    cwdAfter: cwdAfter || null,
     sudoPassword: null,
     passwordExpiresAt: null,
     executedAt: Temporal.Now.instant()
