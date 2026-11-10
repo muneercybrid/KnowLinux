@@ -36,80 +36,101 @@ async function authenticate() {
 }
 
 async function scanSystem() {
-  console.log('🔍 Scanning your Linux system...')
+  console.log('Scanning your Linux system...')
   if (!fs.existsSync(CONFIG_FILE)) {
-    console.error('❌ Not connected. Please run "knowlinux connect" first.')
+    console.error('Not connected. Run knowlinux connect first.')
     return
   }
-
   const { token } = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))
   const osRelease = fs.existsSync('/etc/os-release') ? fs.readFileSync('/etc/os-release', 'utf8') : ''
   const distro = osRelease.match(/PRETTY_NAME="(.+)"/)?.[1] || 'Unknown Linux'
-
-  console.log(`   Distro: ${distro}`)
-  console.log(`   Kernel: ${os.release()}`)
-  console.log(`   Arch: ${os.arch()}`)
-  console.log(`   Hostname: ${os.hostname()}`)
-
-  // Get installed packages via dpkg
-  console.log('📦 Reading installed packages...')
-  let packages: { name: string; version: string; description: string }[] = []
-
+  console.log('   Distro: ' + distro)
+  console.log('   Kernel: ' + os.release())
+  console.log('   Arch: ' + os.arch())
+  console.log('   Hostname: ' + os.hostname())
+  console.log('Checking for updates...')
+  const upgradable: Record<string, string> = {}
+  try {
+    const proc = Bun.spawn(['bash', '-c', 'apt list --upgradable 2>/dev/null'], { stdout: 'pipe' })
+    const output = await new Response(proc.stdout).text()
+    output.split('\n').forEach(line => {
+      const match = line.match(/^([^/]+)\/[^\s]+\s+([^\s]+)\s+[^\s]+\s+\[upgradable from:/)
+      if (match) upgradable[match[1]] = match[2]
+    })
+    console.log('   ' + Object.keys(upgradable).length + ' packages can be upgraded')
+  } catch (e) {
+    console.log('   Could not check upgradable packages')
+  }
+  console.log('Reading installed packages...')
+  let packages: any[] = []
+  const classify = (name: string): { type: string; executablePath: string | null } => {
+    const clean = name.split(':')[0]
+    const appDirs = ['/usr/share/applications', '/usr/local/share/applications']
+    for (const dir of appDirs) {
+      const p = dir + '/' + clean + '.desktop'
+      if (fs.existsSync(p)) return { type: 'app', executablePath: p }
+    }
+    const binDirs = ['/usr/bin', '/usr/local/bin', '/bin', '/sbin', '/usr/sbin']
+    for (const dir of binDirs) {
+      const p = dir + '/' + clean
+      try {
+        const st = fs.statSync(p)
+        if (st.isFile() && (st.mode & 0o111)) return { type: 'tool', executablePath: p }
+      } catch (e) {}
+    }
+    if (clean.startsWith('lib') || clean.endsWith('-dev') || clean.endsWith('-doc') || clean.endsWith('-dbg')) {
+      return { type: 'library', executablePath: null }
+    }
+    return { type: 'package', executablePath: null }
+  }
   try {
     const proc = Bun.spawn(['dpkg-query', '-W', '-f', '${Package}|${Version}|${binary:Summary}\n'], {
       stdout: 'pipe',
     })
     const output = await new Response(proc.stdout).text()
-    
-    // Robust parser: only accept lines that look like "pkgname|version|summary"
     packages = output.split('\n')
       .filter(line => line.trim())
       .map(line => {
         const parts = line.split('|')
         if (parts.length < 3) return null
         const [name, version, description] = parts
-        // Validate package name format
         if (!/^[a-z0-9][a-z0-9.+-]*$/i.test(name.trim())) return null
+        const cleanName = name.trim()
+        const info = classify(cleanName)
+        const latest = upgradable[cleanName]
         return {
-          name: name.trim(),
+          name: cleanName,
           version: version.trim(),
-          description: description.trim()
+          description: description.trim(),
+          type: info.type,
+          executablePath: info.executablePath,
+          latestVersion: latest || null,
+          isOutdated: !!latest
         }
       })
-      .filter((p): p is { name: string; version: string; description: string } => p !== null)
-
-    console.log(`   Found ${packages.length} installed packages`)
+      .filter((p): p is any => p !== null)
+    const counts: Record<string, number> = {}
+    for (const p of packages) counts[p.type] = (counts[p.type] || 0) + 1
+    console.log('   Found ' + packages.length + ' packages: ' + JSON.stringify(counts))
   } catch (e) {
-    console.log('   ⚠️  Could not read packages via dpkg (non-Debian system?)')
+    console.log('   Could not read packages via dpkg')
   }
-
-  // Upload to backend
-  console.log('☁️  Uploading to KnowLinux...')
-  const res = await fetch(`${API_URL}/sync`, {
+  console.log('Uploading to KnowLinux...')
+  const res = await fetch(API_URL + '/sync', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': 'Bearer ' + token
     },
-    body: JSON.stringify({
-      distro,
-      kernel: os.release(),
-      hostname: os.hostname(),
-      arch: os.arch(),
-      packages
-    })
+    body: JSON.stringify({ distro, kernel: os.release(), hostname: os.hostname(), arch: os.arch(), packages })
   })
-
   if (res.ok) {
     const data = await res.json()
-    console.log(`✅ Scan complete! Uploaded ${data.packagesCount} packages.`)
+    console.log('Scan complete! Uploaded ' + data.packagesCount + ' packages.')
   } else {
-    console.error('❌ Upload failed:', await res.text())
+    console.error('Upload failed:', await res.text())
   }
 }
-
-
-
 async function pollCommands() {
   if (!fs.existsSync(CONFIG_FILE)) {
     console.error('❌ Not connected. Run "knowlinux connect" first.')

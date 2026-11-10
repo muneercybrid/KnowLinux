@@ -631,6 +631,13 @@
                   "kind": "scalar"
                 }
               },
+              "executablePath": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -638,7 +645,28 @@
                   "kind": "scalar"
                 }
               },
+              "isOutdated": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "latestVersion": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -682,11 +710,23 @@
                 "deviceId": {
                   "column": "deviceId"
                 },
+                "executablePath": {
+                  "column": "executablePath"
+                },
                 "id": {
                   "column": "id"
                 },
+                "isOutdated": {
+                  "column": "isOutdated"
+                },
+                "latestVersion": {
+                  "column": "latestVersion"
+                },
                 "name": {
                   "column": "name"
+                },
+                "type": {
+                  "column": "type"
                 },
                 "version": {
                   "column": "version"
@@ -2248,6 +2288,11 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "executablePath": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -2257,9 +2302,32 @@
                   },
                   "nullable": false
                 },
+                "isOutdated": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "latestVersion": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
+                  "nullable": false
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "package"
+                  },
                   "nullable": false
                 },
                 "version": {
@@ -3189,7 +3257,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d632d420949c990968e46490721d94fb763f2eeed83be389709718bbe86c2a30"
+    "storageHash": "a34f6f53fd93a6bf7738e352d2c6421ea85d6506db46f688de915ae25b2a62b5"
   },
   "execution": {
     "executionHash": "edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6",

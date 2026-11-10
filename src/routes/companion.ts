@@ -72,7 +72,11 @@ companionApp.post('/sync', async (c) => {
             deviceId: device.id,
             name: pkg.name,
             version: pkg.version || null,
-            description: pkg.description || null
+            description: pkg.description || null,
+            type: pkg.type || 'package',
+            executablePath: pkg.executablePath || null,
+            latestVersion: pkg.latestVersion || null,
+            isOutdated: pkg.isOutdated === true
           })
         )
       )
@@ -233,3 +237,47 @@ companionApp.post('/commands/:id/result', async (c) => {
 })
 
 export default companionApp
+
+companionApp.get('/devices/:id/apps', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+  const all = await db.orm.public.CompanionPackage.where({ deviceId, type: 'app' }).all()
+  return c.json(all)
+})
+
+companionApp.get('/devices/:id/tools', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+  const all = await db.orm.public.CompanionPackage.where({ deviceId, type: 'tool' }).all()
+  return c.json(all)
+})
+
+companionApp.get('/devices/:id/libraries', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+  const all = await db.orm.public.CompanionPackage.where({ deviceId, type: 'library' }).all()
+  return c.json(all)
+})
+
+companionApp.get('/devices/:id/outdated', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+  const all = await db.orm.public.CompanionPackage.where({ deviceId, isOutdated: true }).all()
+  return c.json(all)
+})

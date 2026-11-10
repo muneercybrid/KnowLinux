@@ -191,6 +191,10 @@ model CompanionPackage {
   name        String
   version     String?
   description String?
+  type            String          @default("package")
+  executablePath  String?
+  latestVersion   String?
+  isOutdated      Boolean         @default(false)
   createdAt   DateTime        @default(now())
   @@index([deviceId])
   @@map("companion_package")

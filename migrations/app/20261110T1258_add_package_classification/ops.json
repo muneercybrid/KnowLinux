@@ -1,0 +1,170 @@
+[
+  {
+    "id": "column.public.companion_package.executablePath",
+    "label": "Add column \"executablePath\" to \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "executablePath",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"executablePath\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "executablePath"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"executablePath\"",
+        "sql": "ALTER TABLE \"public\".\"companion_package\" ADD COLUMN \"executablePath\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"executablePath\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "executablePath"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_package.isOutdated",
+    "label": "Add column \"isOutdated\" to \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "isOutdated",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"isOutdated\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "isOutdated"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"isOutdated\"",
+        "sql": "ALTER TABLE \"public\".\"companion_package\" ADD COLUMN \"isOutdated\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"isOutdated\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "isOutdated"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_package.latestVersion",
+    "label": "Add column \"latestVersion\" to \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "latestVersion",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"latestVersion\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "latestVersion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"latestVersion\"",
+        "sql": "ALTER TABLE \"public\".\"companion_package\" ADD COLUMN \"latestVersion\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"latestVersion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "latestVersion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companion_package.type",
+    "label": "Add column \"type\" to \"companion_package\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "type",
+        "table": "companion_package"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"type\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "type"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"type\"",
+        "sql": "ALTER TABLE \"public\".\"companion_package\" ADD COLUMN \"type\" text DEFAULT 'package' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"type\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companion_package",
+          "type"
+        ]
+      }
+    ]
+  }
+]

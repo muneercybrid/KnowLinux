@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d632d420949c990968e46490721d94fb763f2eeed83be389709718bbe86c2a30'>;
+  StorageHashBase<'a34f6f53fd93a6bf7738e352d2c6421ea85d6506db46f688de915ae25b2a62b5'>;
 export type ExecutionHash =
   ExecutionHashBase<'edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6'>;
 export type ProfileHash =
@@ -284,8 +284,12 @@ export type FieldOutputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly deviceId: CodecTypes['pg/int4@1']['output'];
+      readonly executablePath: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly isOutdated: CodecTypes['pg/bool@1']['output'];
+      readonly latestVersion: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly type: CodecTypes['pg/text@1']['output'];
       readonly version: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly DeviceAuthCode: {
@@ -440,8 +444,12 @@ export type FieldInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly deviceId: CodecTypes['pg/int4@1']['input'];
+      readonly executablePath: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly isOutdated: CodecTypes['pg/bool@1']['input'];
+      readonly latestVersion: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly type: CodecTypes['pg/text@1']['input'];
       readonly version: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly DeviceAuthCode: {
@@ -596,8 +604,12 @@ export type StorageColumnTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly deviceId: CodecTypes['pg/int4@1']['output'];
+      readonly executablePath: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly isOutdated: CodecTypes['pg/bool@1']['output'];
+      readonly latestVersion: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly type: CodecTypes['pg/text@1']['output'];
       readonly version: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly device_auth_code: {
@@ -752,8 +764,12 @@ export type StorageColumnInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly deviceId: CodecTypes['pg/int4@1']['input'];
+      readonly executablePath: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly isOutdated: CodecTypes['pg/bool@1']['input'];
+      readonly latestVersion: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly type: CodecTypes['pg/text@1']['input'];
       readonly version: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly device_auth_code: {
@@ -919,8 +935,12 @@ export namespace Models {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     deviceId: CodecTypes['pg/int4@1']['output'];
+    executablePath: CodecTypes['pg/text@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
+    isOutdated: CodecTypes['pg/bool@1']['output'];
+    latestVersion: CodecTypes['pg/text@1']['output'] | null;
     name: CodecTypes['pg/text@1']['output'];
+    type: CodecTypes['pg/text@1']['output'];
     version: CodecTypes['pg/text@1']['output'] | null;
     device: public_CompanionDevice;
     readonly [RelationKeys]?: 'device';
@@ -1481,6 +1501,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly executablePath: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly id: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
@@ -1491,10 +1517,36 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly isOutdated: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
+                readonly latestVersion: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly name: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly type: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'package'>;
+                  };
                   readonly many: false;
                 };
                 readonly version: {
@@ -2695,11 +2747,27 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly executablePath: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly isOutdated: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly latestVersion: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly type: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -2729,8 +2797,12 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly description: { readonly column: 'description' };
                 readonly deviceId: { readonly column: 'deviceId' };
+                readonly executablePath: { readonly column: 'executablePath' };
                 readonly id: { readonly column: 'id' };
+                readonly isOutdated: { readonly column: 'isOutdated' };
+                readonly latestVersion: { readonly column: 'latestVersion' };
                 readonly name: { readonly column: 'name' };
+                readonly type: { readonly column: 'type' };
                 readonly version: { readonly column: 'version' };
               };
             };
