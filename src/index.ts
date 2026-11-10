@@ -373,17 +373,16 @@ app.post('/api/fix/ai', async (c) => {
     const { errorMessage } = await c.req.json()
     if (!errorMessage) return c.json({ error: 'Error message is required' }, 400)
 
-    const systemContext = `You are KnowLinux Fix, an expert Linux systems engineer. 
-    Analyze the user's error message and provide a step-by-step solution. 
-    Separate read-only diagnostics from system modifications. 
-    Format the response as JSON with this exact structure:
+    const systemContext = `You are KnowLinux Fix, an expert Linux engineer. 
+    Provide a concise solution. Separate read-only diagnostics from system modifications. 
+    Respond ONLY with valid JSON matching this structure exactly. Do not use markdown backticks.
     {
-      "diagnostics": ["cmd1", "cmd2"],
-      "fixes": ["cmd1", "cmd2"],
-      "explanation": "text explanation"
+      "diagnostics": ["read_only_cmd_1", "read_only_cmd_2"],
+      "fixes": ["fix_cmd_1", "fix_cmd_2"],
+      "explanation": "Brief explanation of the cause and fix."
     }`
 
-    const prompt = `I am getting this error on my Linux system: "${errorMessage}". How do I fix it?`
+    const prompt = `Error: "${errorMessage}"`
     
     const aiResponse = await generateAIResponse(prompt, systemContext)
     

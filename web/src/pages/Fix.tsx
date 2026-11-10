@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Search, Stethoscope, ShieldCheck, Copy, Check } from 'lucide-react';
+import { AlertTriangle, Search, Stethoscope, ShieldCheck, Copy, Check, Loader2, Bot } from 'lucide-react';
 
 interface AIResponse {
   diagnostics: string[];
@@ -14,11 +14,14 @@ export default function FixPage() {
   const [query, setQuery] = useState('');
   const [dbResults, setDbResults] = useState<any[] | null>(null);
   const [aiResult, setAiResult] = useState<AIResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  
+  // Separate loading states for DB and AI for better UX
+  const [isDbLoading, setIsDbLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  
   const [aiError, setAiError] = useState<string | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   
-
   const navigate = useNavigate();
 
   const handleCopy = (cmd: string) => {
@@ -31,21 +34,25 @@ export default function FixPage() {
     e.preventDefault();
     if (!query.trim()) return;
     
-    setLoading(true);
+    // Reset states
     setDbResults(null);
     setAiResult(null);
     setAiError(null);
+    setIsDbLoading(true);
+    setIsAiLoading(true);
 
-    // 1. Search local database
+    // 1. Search local database (Fast)
     try {
       const res = await fetch(`/api/fix?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       setDbResults(data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsDbLoading(false);
     }
 
-    // 2. If no local results, or if we want AI backup, call AI
+    // 2. Call AI (Slow)
     try {
       const res = await fetch('/api/fix/ai', {
         method: 'POST',
@@ -65,9 +72,9 @@ export default function FixPage() {
       }
     } catch (err: any) {
       setAiError('Failed to connect to AI service.');
+    } finally {
+      setIsAiLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -94,10 +101,14 @@ export default function FixPage() {
             />
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={isDbLoading || isAiLoading}
               className="absolute bottom-4 right-4 bg-brand hover:bg-brand-hover text-dark-bg px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
             >
-              {loading ? 'Diagnosing...' : <><Search className="w-4 h-4" /> Diagnose</>}
+              {isAiLoading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
+              ) : (
+                <><Search className="w-4 h-4" /> Diagnose</>
+              )}
             </button>
           </div>
         </form>
@@ -120,8 +131,26 @@ export default function FixPage() {
             </div>
           )}
 
+          {/* AI Loading Skeleton */}
+          {isAiLoading && (
+            <div className="p-6 rounded-xl border border-brand/30 bg-brand/5 animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <Bot className="w-6 h-6 text-brand" />
+                <h2 className="text-xl font-bold text-brand">AI is analyzing your error...</h2>
+              </div>
+              <div className="space-y-3">
+                <div className="h-4 bg-[var(--bg-elevated)] rounded w-full"></div>
+                <div className="h-4 bg-[var(--bg-elevated)] rounded w-5/6"></div>
+                <div className="h-4 bg-[var(--bg-elevated)] rounded w-4/6"></div>
+              </div>
+              <p className="text-sm text-[var(--text-muted)] mt-4">
+                Generating safe diagnostic steps and fixes using NVIDIA NIM...
+              </p>
+            </div>
+          )}
+
           {/* AI Error State */}
-          {aiError && (
+          {aiError && !isAiLoading && (
             <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-center">
               {aiError}
               {aiError.includes('log in') && (
@@ -131,8 +160,8 @@ export default function FixPage() {
           )}
 
           {/* AI Generated Response */}
-          {aiResult && (
-            <div className="space-y-6">
+          {aiResult && !isAiLoading && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-xl font-bold mb-4 border-b border-[var(--border-color)] pb-2 flex items-center gap-2">
                 <Stethoscope className="w-5 h-5 text-brand" /> AI Analysis
               </h2>
@@ -180,8 +209,8 @@ export default function FixPage() {
             </div>
           )}
 
-          {/* Empty State (If no DB results and no AI result) */}
-          {!loading && dbResults !== null && dbResults.length === 0 && !aiResult && !aiError && (
+          {/* Empty State */}
+          {!isAiLoading && dbResults !== null && dbResults.length === 0 && !aiResult && !aiError && (
              <div className="text-center py-8 text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl">
                No matching fixes found in our database.
              </div>
