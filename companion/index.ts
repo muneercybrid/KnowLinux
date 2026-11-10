@@ -305,6 +305,28 @@ function showStatus() {
 }
 
 
+function watchStatus() {
+  console.clear()
+  console.log('\x1b[?25l') // hide cursor
+  const loop = () => {
+    // Move cursor to top
+    process.stdout.write('\x1b[H')
+    // Reprint the status
+    const origLog = console.log
+    console.log = (...args: any[]) => origLog(...args)
+    showStatus()
+    console.log('  \x1b[2mPress Ctrl+C to exit\x1b[0m')
+  }
+  loop()
+  const interval = setInterval(loop, 2000)
+  process.on('SIGINT', () => {
+    clearInterval(interval)
+    console.log('\x1b[?25h') // show cursor
+    process.exit(0)
+  })
+}
+
+
 const command = process.argv[2]
 if (command === 'connect') {
   authenticate()
@@ -316,6 +338,8 @@ if (command === 'connect') {
   toggleAuto()
 } else if (command === 'status') {
   showStatus()
+} else if (command === 'watch') {
+  watchStatus()
 } else {
   console.log(`
 KnowLinux Companion Agent v1.1
@@ -325,6 +349,7 @@ Usage:
   knowlinux scan      - Scan installed packages
   knowlinux daemon    - Listen for remote commands
   knowlinux toggle-auto - Enable/disable auto-execute
-  knowlinux status    - Show agent status
+  knowlinux status    - Show agent status (one-shot)
+  knowlinux watch     - Live-updating status dashboard
   `)
 }

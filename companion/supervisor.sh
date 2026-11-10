@@ -1,0 +1,19 @@
+#!/bin/bash
+# KnowLinux Companion Supervisor
+# Auto-restarts the daemon if it crashes
+
+BUN="/home/codespace/.bun/bin/bun"
+AGENT="/workspaces/KnowLinux/companion/index.ts"
+LOG="/home/codespace/.knowlinux/daemon.log"
+
+mkdir -p "$(dirname "$LOG")"
+
+echo "[$(date)] Supervisor started" >> "$LOG"
+
+while true; do
+  echo "[$(date)] Starting daemon..." >> "$LOG"
+  "$BUN" run "$AGENT" daemon >> "$LOG" 2>&1
+  EXIT_CODE=$?
+  echo "[$(date)] Daemon exited with code $EXIT_CODE. Restarting in 10s..." >> "$LOG"
+  sleep 10
+done
