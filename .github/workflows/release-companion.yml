@@ -1,0 +1,40 @@
+name: Release Companion Agent
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [bun-linux-x64, bun-linux-arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build binary
+        run: |
+          cd companion
+          bun build ./index.ts --compile --target=${{ matrix.target }} --outfile knowlinux-agent-${{ matrix.target }}
+
+      - name: Verify binary
+        run: |
+          ls -lh companion/knowlinux-agent-${{ matrix.target }}
+          file companion/knowlinux-agent-${{ matrix.target }}
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: companion/knowlinux-agent-${{ matrix.target }}
+          draft: false
+          prerelease: false

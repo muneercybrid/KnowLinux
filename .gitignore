@@ -5,3 +5,7 @@ dist
 .prisma-composer
 .alchemy
 .prisma/
+
+# Companion compiled binaries (built by CI, never committed)
+companion/knowlinux-agent-linux-*
+knowlinux-agent-linux-*
