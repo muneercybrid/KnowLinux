@@ -31,6 +31,10 @@ export default function WorkstationDetail() {
   const [newCommand, setNewCommand] = useState('')
   const [sending, setSending] = useState(false)
   const [selectedPkg, setSelectedPkg] = useState<PackageInfo | null>(null)
+  const [requiresSudo, setRequiresSudo] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [pendingCommandId, setPendingCommandId] = useState<number | null>(null)
+  const [sudoPassword, setSudoPassword] = useState('')
 
   const refreshCommands = () => {
     fetch(`/api/companion/devices/${id}/commands`)
@@ -56,13 +60,31 @@ export default function WorkstationDetail() {
   const handleSendCommand = async () => {
     if (!newCommand.trim()) return
     setSending(true)
-    await fetch(`/api/companion/devices/${id}/commands`, {
+    const res = await fetch(`/api/companion/devices/${id}/commands`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: newCommand })
+      body: JSON.stringify({ command: newCommand, requiresSudo })
     })
+    const data = await res.json()
     setNewCommand('')
     setSending(false)
+    refreshCommands()
+    if (requiresSudo && data.id) {
+      setPendingCommandId(data.id)
+      setShowPasswordModal(true)
+    }
+  }
+
+  const handlePasswordSubmit = async () => {
+    if (!pendingCommandId || !sudoPassword) return
+    await fetch(`/api/companion/commands/${pendingCommandId}/password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: sudoPassword })
+    })
+    setSudoPassword('')
+    setPendingCommandId(null)
+    setShowPasswordModal(false)
     refreshCommands()
   }
 
@@ -148,6 +170,9 @@ export default function WorkstationDetail() {
               <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Send className="w-5 h-5 text-brand" /> Send Command</h2>
               <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
                 <div className="flex gap-2 mb-3">
+                  <button onClick={() => setRequiresSudo(!requiresSudo)} className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border shrink-0 ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand'}`} title={requiresSudo ? 'Switch to normal user' : 'Switch to sudo mode'}>
+                    {requiresSudo ? 'sudo' : 'user'}
+                  </button>
                   <input type="text" value={newCommand} onChange={e => setNewCommand(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
                     placeholder="e.g., uname -a"
@@ -209,6 +234,28 @@ export default function WorkstationDetail() {
       </main>
       <Footer />
       <PackageModal pkg={selectedPkg} onClose={() => setSelectedPkg(null)} />
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-2">Sudo Password Required</h3>
+            <p className="text-sm text-[var(--text-muted)] mb-4">Your machine is running as a normal user. Enter the sudo password to run this command.</p>
+            <input type="password" value={sudoPassword} onChange={e => setSudoPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="Sudo password"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button onClick={() => { setShowPasswordModal(false); setSudoPassword(''); setPendingCommandId(null) }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] font-semibold">Cancel</button>
+              <button onClick={handlePasswordSubmit} disabled={!sudoPassword}
+                className="flex-1 bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold disabled:opacity-50">Submit</button>
+            </div>
+            <p className="text-xs text-[var(--text-faint)] mt-3">Password is used once and wiped immediately after execution.</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
