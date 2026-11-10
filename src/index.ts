@@ -11,6 +11,7 @@ import { liveSearchRepology, debugRepology } from './services/live-search.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import companionApp from './routes/companion.js'
+import googleApp from './routes/google-auth.js'
 
 const app = new Hono()
 
@@ -409,6 +410,8 @@ app.post('/api/fix/ai', async (c) => {
 })
 
 app.route('/api/companion', companionApp)
+
+app.route('/api/auth', googleApp)
 
 // --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

@@ -6,6 +6,7 @@ model User {
   username      String?        @unique
   name          String?
   passwordHash  String?
+  googleId      String?         @unique
   posts         Post[]
   sessions      Session[]
   savedCommands SavedCommand[]

@@ -1667,6 +1667,13 @@
                   "kind": "scalar"
                 }
               },
+              "googleId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1772,6 +1779,9 @@
                 },
                 "email": {
                   "column": "email"
+                },
+                "googleId": {
+                  "column": "googleId"
                 },
                 "id": {
                   "column": "id"
@@ -3113,6 +3123,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "googleId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -3160,6 +3175,11 @@
                   "columns": [
                     "username"
                   ]
+                },
+                {
+                  "columns": [
+                    "googleId"
+                  ]
                 }
               ]
             }
@@ -3169,7 +3189,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d4417926ea48bbb56d1916213d3dce7bbfc775777000760f2fd7a594cb6a27e8"
+    "storageHash": "d632d420949c990968e46490721d94fb763f2eeed83be389709718bbe86c2a30"
   },
   "execution": {
     "executionHash": "edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6",

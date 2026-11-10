@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { GoogleButton } from '../components/GoogleButton';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -40,6 +41,15 @@ export default function Register() {
         <div className="w-full max-w-md p-8 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
           <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
           {error && <div className="mb-4 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">{error}</div>}
+          <GoogleButton />
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--border-color)]"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-[var(--bg-surface)] text-[var(--text-muted)]">OR</span>
+            </div>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
