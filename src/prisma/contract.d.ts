@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ca98cc08de2b9dcf0426d7c4d62f17ed3425c19e4989ca7a590b8fba49c27f6f'>;
+  StorageHashBase<'802db623c0bfd68c3fc0e49699ba94ef55c87ae40ee87e2a0fdc0a9ceee4c9a9'>;
 export type ExecutionHash =
   ExecutionHashBase<'edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6'>;
 export type ProfileHash =
@@ -316,6 +316,7 @@ export type FieldOutputTypes = {
       readonly softwareId: CodecTypes['pg/int4@1']['output'];
     };
     readonly Tool: {
+      readonly aiDescription: CodecTypes['pg/text@1']['output'] | null;
       readonly categoryId: CodecTypes['pg/int4@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
@@ -432,6 +433,7 @@ export type FieldInputTypes = {
       readonly softwareId: CodecTypes['pg/int4@1']['input'];
     };
     readonly Tool: {
+      readonly aiDescription: CodecTypes['pg/text@1']['input'] | null;
       readonly categoryId: CodecTypes['pg/int4@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
@@ -548,6 +550,7 @@ export type StorageColumnTypes = {
       readonly softwareId: CodecTypes['pg/int4@1']['output'];
     };
     readonly tool: {
+      readonly aiDescription: CodecTypes['pg/text@1']['output'] | null;
       readonly categoryId: CodecTypes['pg/int4@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
@@ -664,6 +667,7 @@ export type StorageColumnInputTypes = {
       readonly softwareId: CodecTypes['pg/int4@1']['input'];
     };
     readonly tool: {
+      readonly aiDescription: CodecTypes['pg/text@1']['input'] | null;
       readonly categoryId: CodecTypes['pg/int4@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
@@ -800,6 +804,7 @@ export namespace Models {
     readonly [RelationKeys]?: 'distribution' | 'software';
   };
   export type public_Tool = {
+    aiDescription: CodecTypes['pg/text@1']['output'] | null;
     categoryId: CodecTypes['pg/int4@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     description: CodecTypes['pg/text@1']['output'];
@@ -1531,6 +1536,16 @@ type ContractBase = Omit<
             };
             readonly tool: {
               columns: {
+                readonly aiDescription: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', ''>;
+                  };
+                  readonly many: false;
+                };
                 readonly categoryId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
@@ -2366,6 +2381,10 @@ type ContractBase = Omit<
           };
           readonly Tool: {
             readonly fields: {
+              readonly aiDescription: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly categoryId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -2430,6 +2449,7 @@ type ContractBase = Omit<
               readonly table: 'tool';
               readonly namespaceId: 'public';
               readonly fields: {
+                readonly aiDescription: { readonly column: 'aiDescription' };
                 readonly categoryId: { readonly column: 'categoryId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly description: { readonly column: 'description' };

@@ -968,6 +968,13 @@
           },
           "Tool": {
             "fields": {
+              "aiDescription": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "categoryId": {
                 "nullable": false,
                 "type": {
@@ -1053,6 +1060,9 @@
             },
             "storage": {
               "fields": {
+                "aiDescription": {
+                  "column": "aiDescription"
+                },
                 "categoryId": {
                   "column": "categoryId"
                 },
@@ -2096,6 +2106,15 @@
             },
             "tool": {
               "columns": {
+                "aiDescription": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": true
+                },
                 "categoryId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -2342,7 +2361,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ca98cc08de2b9dcf0426d7c4d62f17ed3425c19e4989ca7a590b8fba49c27f6f"
+    "storageHash": "802db623c0bfd68c3fc0e49699ba94ef55c87ae40ee87e2a0fdc0a9ceee4c9a9"
   },
   "execution": {
     "executionHash": "edf97ab8ffbc283074d44648da1859b5f631523d4cdbf35696f67e92784160a6",

@@ -69,7 +69,8 @@ model Tool {
   description String
   categoryId  Int
   category    Category  @relation(fields: [categoryId], references: [id])
-  packages    Package[]
+  packages      Package[]
+  aiDescription String?     @default("")
   createdAt   DateTime  @default(now())
   updatedAt   temporal.updatedAt()
   @@map("tool")

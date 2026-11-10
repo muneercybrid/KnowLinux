@@ -341,6 +341,72 @@ app.get('/api/live-search', async (c) => {
   return c.json(results)
 })
 
+// --- AI Enrichment API ---
+app.post('/api/admin/enrich-tool/:slug', async (c) => {
+  try {
+    const slug = c.req.param('slug')
+    const db = getDb()
+    const tool = await db.orm.public.Tool.where({ slug }).first()
+    if (!tool) return c.json({ error: 'Tool not found' }, 404)
+
+    const prompt = `Write a comprehensive overview for the Linux tool "${tool.name}". 
+    Include what it does, its primary use cases, and 3 bullet points of Pros, and 3 bullet points of Requirements. 
+    Keep it under 200 words. Format nicely with basic text.`
+
+    const aiDescription = await generateAIResponse(prompt)
+    
+    await db.orm.public.Tool.where({ slug }).update({ aiDescription })
+
+    return c.json({ success: true, aiDescription })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// --- AI Fix Assistant ---
+app.post('/api/fix/ai', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'You must be logged in to use the AI assistant.' }, 401)
+
+  try {
+    const { errorMessage } = await c.req.json()
+    if (!errorMessage) return c.json({ error: 'Error message is required' }, 400)
+
+    const systemContext = `You are KnowLinux Fix, an expert Linux systems engineer. 
+    Analyze the user's error message and provide a step-by-step solution. 
+    Separate read-only diagnostics from system modifications. 
+    Format the response as JSON with this exact structure:
+    {
+      "diagnostics": ["cmd1", "cmd2"],
+      "fixes": ["cmd1", "cmd2"],
+      "explanation": "text explanation"
+    }`
+
+    const prompt = `I am getting this error on my Linux system: "${errorMessage}". How do I fix it?`
+    
+    const aiResponse = await generateAIResponse(prompt, systemContext)
+    
+    // Try to parse the JSON response from the AI
+    let parsedResponse
+    try {
+      // Extract JSON if the AI wrapped it in markdown
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
+      parsedResponse = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse)
+    } catch (e) {
+      // Fallback if AI didn't return perfect JSON
+      parsedResponse = {
+        diagnostics: [],
+        fixes: [],
+        explanation: aiResponse
+      }
+    }
+
+    return c.json(parsedResponse)
+  } catch (error: any) {
+    return c.json({ error: error.message || 'AI analysis failed' }, 500)
+  }
+})
+
 // --- Static Files (MUST BE LAST) ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
