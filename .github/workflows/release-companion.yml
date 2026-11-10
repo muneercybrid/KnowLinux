@@ -14,7 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [bun-linux-x64, bun-linux-arm64]
+        include:
+          - target: bun-linux-x64
+            output: linux-x64
+          - target: bun-linux-arm64
+            output: linux-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,16 +29,16 @@ jobs:
       - name: Build binary
         run: |
           cd companion
-          bun build ./index.ts --compile --target=${{ matrix.target }} --outfile knowlinux-agent-${{ matrix.target }}
+          bun build ./index.ts --compile --target=${{ matrix.target }} --outfile knowlinux-agent-${{ matrix.output }}
 
       - name: Verify binary
         run: |
-          ls -lh companion/knowlinux-agent-${{ matrix.target }}
-          file companion/knowlinux-agent-${{ matrix.target }}
+          ls -lh companion/knowlinux-agent-${{ matrix.output }}
+          file companion/knowlinux-agent-${{ matrix.output }}
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
-          files: companion/knowlinux-agent-${{ matrix.target }}
+          files: companion/knowlinux-agent-${{ matrix.output }}
           draft: false
           prerelease: false
