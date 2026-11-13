@@ -171,26 +171,48 @@ async function pollCommands() {
   }
 
   const sessionState = { cwd: os.homedir(), prevCwd: os.homedir() }
+  let cachedSudoPassword: string | null = null
+  let isRootSession = false
 
   const executeCommand = async (cmd: any): Promise<{ output: string; exitCode: number; cwdBefore: string; cwdAfter: string }> => {
     const command = cmd.command.trim()
     const cwdBefore = sessionState.cwd
     const cwdEscaped = JSON.stringify(sessionState.cwd)
 
+    // Cache password when provided
+    if (cmd.sudoPassword) cachedSudoPassword = cmd.sudoPassword
+
+    // Handle "sudo su" / "sudo -i" / "su" as root session toggle
+    if (/^(sudo\s+su|sudo\s+-i|sudo\s+-s|su\s*-|su)$/.test(command)) {
+      if (!cachedSudoPassword && !isRoot) {
+        return { output: '[sudo] password required - click the sudo button and enter password', exitCode: 1, cwdBefore, cwdAfter: cwdBefore }
+      }
+      isRootSession = true
+      return { output: '[Root session activated] Subsequent commands run as root. Type "exit" to end.', exitCode: 0, cwdBefore, cwdAfter: cwdBefore }
+    }
+
+    if (isRootSession && /^(exit|logout)$/.test(command)) {
+      isRootSession = false
+      return { output: '[Left root session]', exitCode: 0, cwdBefore, cwdAfter: cwdBefore }
+    }
+
+    const useSudo = cmd.requiresSudo || isRootSession
+    const password = cachedSudoPassword
+
     try {
       let proc: any
-      if (cmd.requiresSudo && !isRoot && cmd.sudoPassword) {
+      
+      if (useSudo && !isRoot && password) {
+        // Strip redundant sudo if user typed it
         const strippedCmd = command.replace(/^sudo\s+/, '')
-        const wrapped = `cd ${cwdEscaped} 2>/dev/null; sudo -S -p '' bash -c ${JSON.stringify(strippedCmd)}; echo "__KL_CWD__$(pwd)"`
-        proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe', stdin: 'pipe' })
-        proc.stdin.write(cmd.sudoPassword + '\n')
-        proc.stdin.end()
-      } else if (cmd.requiresSudo && isRoot) {
-        const strippedCmd = command.replace(/^sudo\s+/, '')
-        const wrapped = `cd ${cwdEscaped} 2>/dev/null; ${strippedCmd}; echo "__KL_CWD__$(pwd)"`
+        const wrapped = `cd ${cwdEscaped} 2>/dev/null; echo ${JSON.stringify(password)} | sudo -S -p '' bash -c ${JSON.stringify(strippedCmd)}; echo "__KL_CWD__$(pwd)"`
         proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe' })
+      } else if (useSudo && !isRoot && !password) {
+        return { output: '[sudo] password required - click the sudo button and enter password', exitCode: 1, cwdBefore, cwdAfter: cwdBefore }
       } else {
-        const wrapped = `cd ${cwdEscaped} 2>/dev/null; ${command}; echo "__KL_CWD__$(pwd)"`
+        // Regular command OR already root
+        const strippedCmd = isRoot ? command : command
+        const wrapped = `cd ${cwdEscaped} 2>/dev/null; ${strippedCmd}; echo "__KL_CWD__$(pwd)"`
         proc = Bun.spawn(['bash', '-c', wrapped], { stdout: 'pipe', stderr: 'pipe' })
       }
 
@@ -212,6 +234,12 @@ async function pollCommands() {
       }
 
       const output = cleanStdout + (stderr ? (cleanStdout ? '\n' : '') + stderr : '')
+
+      // If sudo password was wrong, clear cache
+      if (useSudo && /incorrect password|Sorry, try again/i.test(output)) {
+        cachedSudoPassword = null
+      }
+
       return { output, exitCode, cwdBefore, cwdAfter }
     } catch (e: any) {
       return { output: 'Execution failed: ' + e.message, exitCode: -1, cwdBefore, cwdAfter: sessionState.cwd }

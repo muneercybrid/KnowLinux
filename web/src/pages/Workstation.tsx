@@ -43,11 +43,13 @@ export default function Workstation() {
             {devices.map(d => {
               let os: any = {}
               try { os = JSON.parse(d.osInfo || '{}') } catch (e) {}
+              const isOnline = d.lastSeenAt && (Date.now() - new Date(d.lastSeenAt).getTime() < 10000)
               return (
                 <Link key={d.id} to={`/workstation/${d.id}`} className="block p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-brand transition-colors group">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
+                        <span className={`inline-block w-2 h-2 rounded-full mr-1 ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         <Cpu className="w-5 h-5 text-brand" />
                         <span className="text-lg font-bold">{os.hostname || d.name}</span>
                       </div>

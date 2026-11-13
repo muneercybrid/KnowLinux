@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Footer } from '../components/Footer'
 import { PackageModal, PackageInfo } from '../components/PackageModal'
-import { ArrowLeft, Search, Terminal, Send, Loader2, Info, Layout, Wrench, Package, Library, AlertTriangle, Server } from 'lucide-react'
+import { ArrowLeft, Search, Terminal, Loader2, Info, Layout, Wrench, Package, Library, AlertTriangle, Server } from 'lucide-react'
 
 interface Device { id: number; name: string; osInfo: string; lastSeenAt: string }
 interface Command { id: number; command: string; status: string; output: string | null; exitCode: number | null; createdAt: string; requiresSudo?: boolean; cwdBefore?: string | null; cwdAfter?: string | null }
@@ -31,7 +31,9 @@ export default function WorkstationDetail() {
   const [newCommand, setNewCommand] = useState('')
   const [sending, setSending] = useState(false)
   const [selectedPkg, setSelectedPkg] = useState<PackageInfo | null>(null)
+  const [isOnline, setIsOnline] = useState(false)
   const terminalRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [requiresSudo, setRequiresSudo] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [pendingCommandId, setPendingCommandId] = useState<number | null>(null)
@@ -55,7 +57,28 @@ export default function WorkstationDetail() {
     }).catch(() => setLoading(false))
     refreshCommands()
     const interval = setInterval(refreshCommands, 1000)
-    return () => clearInterval(interval)
+    const statusInterval = setInterval(() => {
+      fetch(`/api/companion/devices/${id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.lastSeenAt) {
+            const age = Date.now() - new Date(d.lastSeenAt).getTime()
+            setIsOnline(age < 10000)
+          }
+        })
+        .catch(() => {})
+    }, 2000)
+    // Initial check
+    fetch(`/api/companion/devices/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.lastSeenAt) {
+          const age = Date.now() - new Date(d.lastSeenAt).getTime()
+          setIsOnline(age < 10000)
+        }
+      })
+      .catch(() => {})
+    return () => { clearInterval(interval); clearInterval(statusInterval) }
   }, [id])
 
   const handleSendCommand = async () => {
@@ -173,16 +196,32 @@ export default function WorkstationDetail() {
         )}
 
         {activeTab === 'commands' && (
-          <div className="flex flex-col" style={{ height: '70vh' }}>
+          <div className="flex flex-col" style={{ height: '75vh' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className={`inline-block w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                <span className="text-sm font-semibold">{isOnline ? 'Online' : 'Offline'}</span>
+                <span className="text-xs text-[var(--text-muted)]">
+                  · last seen {isOnline ? 'just now' : 'over 10s ago'}
+                </span>
+              </div>
+              <button
+                onClick={() => setRequiresSudo(!requiresSudo)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)]'}`}
+              >
+                {requiresSudo ? 'sudo' : 'user'}
+              </button>
+            </div>
             <div
               ref={terminalRef}
-              className="flex-1 overflow-y-auto bg-[#0d1117] border border-[#30363d] rounded-t-lg p-4 font-mono text-sm"
+              className="flex-1 overflow-y-auto bg-[#0d1117] border border-[#30363d] rounded-lg p-4 font-mono text-sm cursor-text"
+              onClick={() => inputRef.current?.focus()}
             >
               <div className="text-[var(--text-faint)] mb-3 pb-2 border-b border-[#21262d]">
                 Connected to <span className="text-brand">{os.hostname || 'remote'}</span> ({os.distro || 'Linux'})
               </div>
               {commands.slice().reverse().map((cmd: Command) => (
-                <div key={cmd.id} className="mb-2">
+                <div key={cmd.id} className="mb-1">
                   <div className="flex flex-wrap items-baseline">
                     <span className="text-emerald-500">{os.hostname || 'remote'}</span>
                     <span className="text-[#8b949e]">:</span>
@@ -191,48 +230,34 @@ export default function WorkstationDetail() {
                     <span className="text-[var(--text-main)]">{cmd.command}</span>
                     {cmd.requiresSudo && <span className="text-amber-500 text-xs ml-2">[sudo]</span>}
                   </div>
-                  {cmd.status === 'pending' && <div className="text-amber-500 text-xs mt-1">running...</div>}
-                  {cmd.status === 'awaiting_password' && <div className="text-amber-500 text-xs mt-1">awaiting password</div>}
+                  {cmd.status === 'pending' && <div className="text-amber-500 text-xs pl-2">running...</div>}
+                  {cmd.status === 'awaiting_password' && <div className="text-amber-500 text-xs pl-2">awaiting password</div>}
                   {cmd.status === 'completed' && cmd.output && (
-                    <pre className={`whitespace-pre-wrap mt-1 ${cmd.exitCode && cmd.exitCode !== 0 ? 'text-red-400' : 'text-[#c9d1d9]'}`}>{cmd.output}</pre>
+                    <pre className={`whitespace-pre-wrap text-[#c9d1d9] pl-2 ${cmd.exitCode !== null && cmd.exitCode !== 0 ? 'text-red-400' : ''}`}>{cmd.output}</pre>
                   )}
                 </div>
               ))}
-              <div className="flex flex-wrap items-baseline">
+              <div className="flex flex-wrap items-baseline mt-2">
                 <span className="text-emerald-500">{os.hostname || 'remote'}</span>
                 <span className="text-[#8b949e]">:</span>
                 <span className="text-blue-400">{commands[0]?.cwdAfter || '~'}</span>
                 <span className="text-[#8b949e]">$ </span>
-                <span className="text-[var(--text-main)]">{newCommand}</span>
-                <span className="text-brand animate-pulse">▊</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={newCommand}
+                  onChange={e => setNewCommand(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
+                  className="flex-1 bg-transparent border-none outline-none text-[var(--text-main)] font-mono text-sm caret-emerald-500"
+                  autoFocus
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                {sending && <Loader2 className="w-4 h-4 animate-spin text-brand ml-2" />}
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-[#161b22] border border-[#30363d] border-t-0 rounded-b-lg p-3">
-              <button
-                onClick={() => setRequiresSudo(!requiresSudo)}
-                className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border shrink-0 ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[#21262d] border-[#30363d] text-[#8b949e] hover:border-brand'}`}
-                title={requiresSudo ? 'Switch to normal user' : 'Switch to sudo mode'}
-              >
-                {requiresSudo ? 'sudo' : 'user'}
-              </button>
-              <input
-                type="text"
-                value={newCommand}
-                onChange={e => setNewCommand(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
-                placeholder="Type a command..."
-                className="flex-1 px-3 py-2 rounded-lg border border-[#30363d] bg-[#0d1117] text-[var(--text-main)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              />
-              <button
-                onClick={handleSendCommand}
-                disabled={sending || !newCommand.trim()}
-                className="bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
-              >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </div>
             <p className="text-xs text-[var(--text-faint)] mt-2">
-              {commands.length} command{commands.length !== 1 ? 's' : ''} executed · daemon polls every 1s
+              {commands.length} command{commands.length !== 1 ? 's' : ''} · click terminal to focus
             </p>
           </div>
         )}

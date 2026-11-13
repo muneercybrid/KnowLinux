@@ -95,6 +95,22 @@ companionApp.get('/devices', async (c) => {
   })))
 })
 
+companionApp.get('/devices/:id', async (c) => {
+  const user = await getCurrentUser(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const deviceId = parseInt(c.req.param('id'))
+  const db = getDb()
+  const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
+  if (!device) return c.json({ error: 'Device not found' }, 404)
+  return c.json({
+    id: device.id,
+    name: device.name,
+    osInfo: device.osInfo,
+    lastSeenAt: device.lastSeenAt ? String(device.lastSeenAt) : null,
+    createdAt: device.createdAt ? String(device.createdAt) : null
+  })
+})
+
 companionApp.delete('/devices/:id', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
