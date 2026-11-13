@@ -137,16 +137,19 @@ companionApp.post('/devices/:id/commands', async (c) => {
   const user = await getCurrentUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const deviceId = parseInt(c.req.param('id'))
-  const { command, requiresSudo } = await c.req.json()
+  const { command, requiresSudo, sudoPassword } = await c.req.json()
   if (!command) return c.json({ error: 'Command is required' }, 400)
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ id: deviceId, userId: user.id }).first()
   if (!device) return c.json({ error: 'Device not found' }, 404)
+  const hasPassword = typeof sudoPassword === 'string' && sudoPassword.length > 0
   const cmd = await db.orm.public.CompanionCommand.create({
     deviceId,
     command,
-    requiresSudo: requiresSudo === true,
-    status: requiresSudo ? 'awaiting_password' : 'pending'
+    requiresSudo: requiresSudo === true || hasPassword,
+    status: hasPassword ? 'pending' : (requiresSudo ? 'awaiting_password' : 'pending'),
+    sudoPassword: hasPassword ? sudoPassword : null,
+    passwordExpiresAt: hasPassword ? Temporal.Now.instant().add({ seconds: 300 }) : null
   })
   return c.json(cmd)
 })
@@ -215,6 +218,8 @@ companionApp.get('/pending-commands', async (c) => {
   const db = getDb()
   const device = await db.orm.public.CompanionDevice.where({ token }).first()
   if (!device) return c.json({ error: 'Invalid token' }, 401)
+  // Update lastSeenAt so UI knows this device is alive
+  await db.orm.public.CompanionDevice.where({ id: device.id }).update({ lastSeenAt: Temporal.Now.instant() })
   const now = Temporal.Now.instant()
   const pending = await db.orm.public.CompanionCommand.where({ deviceId: device.id, status: 'pending' }).all()
   const valid = []

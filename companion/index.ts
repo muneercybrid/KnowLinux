@@ -196,7 +196,8 @@ async function pollCommands() {
       return { output: '[Left root session]', exitCode: 0, cwdBefore, cwdAfter: cwdBefore }
     }
 
-    const useSudo = cmd.requiresSudo || isRootSession
+    const commandNeedsSudo = /^sudo\s+/.test(command)
+    const useSudo = cmd.requiresSudo || commandNeedsSudo || isRootSession
     const password = cachedSudoPassword
 
     try {

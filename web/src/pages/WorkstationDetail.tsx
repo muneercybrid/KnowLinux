@@ -34,10 +34,9 @@ export default function WorkstationDetail() {
   const [isOnline, setIsOnline] = useState(false)
   const terminalRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [requiresSudo, setRequiresSudo] = useState(false)
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [pendingCommandId, setPendingCommandId] = useState<number | null>(null)
-  const [sudoPassword, setSudoPassword] = useState('')
+  const passwordInputRef = useRef<HTMLInputElement>(null)
+  const [pendingSudoCmd, setPendingSudoCmd] = useState<string | null>(null)
+  const [inlinePassword, setInlinePassword] = useState('')
 
   const refreshCommands = () => {
     fetch(`/api/companion/devices/${id}/commands`)
@@ -82,33 +81,41 @@ export default function WorkstationDetail() {
   }, [id])
 
   const handleSendCommand = async () => {
-    if (!newCommand.trim()) return
+    const cmd = newCommand.trim()
+    if (!cmd || pendingSudoCmd) return
+
+    const needsSudo = /^sudo\s+/.test(cmd) || cmd === 'sudo su'
+
+    if (needsSudo) {
+      setPendingSudoCmd(cmd)
+      setNewCommand('')
+      return
+    }
+
     setSending(true)
-    const res = await fetch(`/api/companion/devices/${id}/commands`, {
+    await fetch(`/api/companion/devices/${id}/commands`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: newCommand, requiresSudo })
+      body: JSON.stringify({ command: cmd })
     })
-    const data = await res.json()
     setNewCommand('')
     setSending(false)
     refreshCommands()
-    if (requiresSudo && data.id) {
-      setPendingCommandId(data.id)
-      setShowPasswordModal(true)
-    }
   }
 
-  const handlePasswordSubmit = async () => {
-    if (!pendingCommandId || !sudoPassword) return
-    await fetch(`/api/companion/commands/${pendingCommandId}/password`, {
+  const submitInlinePassword = async () => {
+    if (!pendingSudoCmd || !inlinePassword) return
+    const cmd = pendingSudoCmd
+    const pwd = inlinePassword
+    setSending(true)
+    await fetch(`/api/companion/devices/${id}/commands`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: sudoPassword })
+      body: JSON.stringify({ command: cmd, sudoPassword: pwd })
     })
-    setSudoPassword('')
-    setPendingCommandId(null)
-    setShowPasswordModal(false)
+    setPendingSudoCmd(null)
+    setInlinePassword('')
+    setSending(false)
     refreshCommands()
   }
 
@@ -134,6 +141,10 @@ export default function WorkstationDetail() {
     activeTab === 'libraries' ? filterList(libraries) :
     activeTab === 'outdated' ? filterList(outdated) : []
 
+
+  useEffect(() => {
+    if (pendingSudoCmd) passwordInputRef.current?.focus()
+  }, [pendingSudoCmd])
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -205,12 +216,7 @@ export default function WorkstationDetail() {
                   · last seen {isOnline ? 'just now' : 'over 10s ago'}
                 </span>
               </div>
-              <button
-                onClick={() => setRequiresSudo(!requiresSudo)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border ${requiresSudo ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)]'}`}
-              >
-                {requiresSudo ? 'sudo' : 'user'}
-              </button>
+
             </div>
             <div
               ref={terminalRef}
@@ -237,24 +243,54 @@ export default function WorkstationDetail() {
                   )}
                 </div>
               ))}
-              <div className="flex flex-wrap items-baseline mt-2">
-                <span className="text-emerald-500">{os.hostname || 'remote'}</span>
-                <span className="text-[#8b949e]">:</span>
-                <span className="text-blue-400">{commands[0]?.cwdAfter || '~'}</span>
-                <span className="text-[#8b949e]">$ </span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newCommand}
-                  onChange={e => setNewCommand(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
-                  className="flex-1 bg-transparent border-none outline-none text-[var(--text-main)] font-mono text-sm caret-emerald-500"
-                  autoFocus
-                  spellCheck={false}
-                  autoComplete="off"
-                />
-                {sending && <Loader2 className="w-4 h-4 animate-spin text-brand ml-2" />}
-              </div>
+              {pendingSudoCmd ? (
+                <>
+                  <div className="flex flex-wrap items-baseline mt-2">
+                    <span className="text-emerald-500">{os.hostname || 'remote'}</span>
+                    <span className="text-[#8b949e]">:</span>
+                    <span className="text-blue-400">{commands[0]?.cwdAfter || '~'}</span>
+                    <span className="text-[#8b949e]">$ </span>
+                    <span className="text-[var(--text-main)]">{pendingSudoCmd}</span>
+                  </div>
+                  <div className="flex items-baseline">
+                    <span className="text-[#8b949e]">[sudo] password: </span>
+                    <input
+                      ref={passwordInputRef}
+                      type="password"
+                      value={inlinePassword}
+                      onChange={e => setInlinePassword(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') submitInlinePassword()
+                        if (e.key === 'Escape') { setPendingSudoCmd(null); setInlinePassword('') }
+                      }}
+                      className="flex-1 bg-transparent border-none outline-none text-[var(--text-main)] font-mono text-sm caret-emerald-500"
+                      autoFocus
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                    {sending && <Loader2 className="w-4 h-4 animate-spin text-brand ml-2" />}
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-wrap items-baseline mt-2">
+                  <span className="text-emerald-500">{os.hostname || 'remote'}</span>
+                  <span className="text-[#8b949e]">:</span>
+                  <span className="text-blue-400">{commands[0]?.cwdAfter || '~'}</span>
+                  <span className="text-[#8b949e]">$ </span>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newCommand}
+                    onChange={e => setNewCommand(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSendCommand()}
+                    className="flex-1 bg-transparent border-none outline-none text-[var(--text-main)] font-mono text-sm caret-emerald-500"
+                    autoFocus
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  {sending && <Loader2 className="w-4 h-4 animate-spin text-brand ml-2" />}
+                </div>
+              )}
             </div>
             <p className="text-xs text-[var(--text-faint)] mt-2">
               {commands.length} command{commands.length !== 1 ? 's' : ''} · click terminal to focus
@@ -295,27 +331,6 @@ export default function WorkstationDetail() {
       <Footer />
       <PackageModal pkg={selectedPkg} onClose={() => setSelectedPkg(null)} />
 
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-2">Sudo Password Required</h3>
-            <p className="text-sm text-[var(--text-muted)] mb-4">Your machine is running as a normal user. Enter the sudo password to run this command.</p>
-            <input type="password" value={sudoPassword} onChange={e => setSudoPassword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="Sudo password"
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button onClick={() => { setShowPasswordModal(false); setSudoPassword(''); setPendingCommandId(null) }}
-                className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] font-semibold">Cancel</button>
-              <button onClick={handlePasswordSubmit} disabled={!sudoPassword}
-                className="flex-1 bg-brand hover:bg-brand-hover text-dark-bg px-4 py-2 rounded-lg font-semibold disabled:opacity-50">Submit</button>
-            </div>
-            <p className="text-xs text-[var(--text-faint)] mt-3">Password is used once and wiped immediately after execution.</p>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
   )
 }
